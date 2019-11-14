@@ -1,7 +1,5 @@
 #include "get_depth.hpp"
-#include <opencv2/imgproc.hpp>
-#include <opencv2/highgui.hpp>
-#include <opencv2/core.hpp>
+
 
 using namespace cv;
 
@@ -28,7 +26,9 @@ try
 
 		cv::imshow("img_l", dMat_left);
 		cv::imshow("img_r", dMat_right);
-		char c = cv::waitKey(1);
+        cv::imwrite("/home/yons/projects/realsense/res/left.jpg",dMat_left);
+        cv::imwrite("/home/yons/projects/realsense/res/right.jpg",dMat_right);
+		char c = cv::waitKey(0);
         float width=depth.get_width();
         float height=depth.get_height();
 
