@@ -23,19 +23,22 @@ try
 
 		cv::Mat dMat_left = cv::Mat(cv::Size(1280, 720), CV_8UC1, (void*)ir_frame_left.get_data());
 		cv::Mat dMat_right = cv::Mat(cv::Size(1280, 720), CV_8UC1, (void*)ir_frame_right.get_data());
+        cv::Mat dMat_depth=cv::Mat(cv::Size(1280,720),CV_8UC1,(void*)depth.get_data());
 
 		cv::imshow("img_l", dMat_left);
 		cv::imshow("img_r", dMat_right);
-        cv::imwrite("/home/yons/projects/realsense/res/left.jpg",dMat_left);
-        cv::imwrite("/home/yons/projects/realsense/res/right.jpg",dMat_right);
-		char c = cv::waitKey(0);
+        cv::imshow("depth",dMat_depth);
+        //cv::imwrite("/home/yons/projects/realsense/res/left.jpg",dMat_left);
+        //cv::imwrite("/home/yons/projects/realsense/res/right.jpg",dMat_right);
+		char c = cv::waitKey(30);
+
         float width=depth.get_width();
         float height=depth.get_height();
-
+        
         float dist_to_center=depth.get_distance(width/2,height/2);
 
         std::cout<<"The camera is facing an object "<<dist_to_center<<" meters away \r";
-      
+    
     }
     return EXIT_SUCCESS;
 }
