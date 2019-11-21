@@ -8,7 +8,7 @@ int main()
     //get_depth();
     //get_pointcloud();
     MYREALSENSE firstone;
-    firstone.get_pointcloud();
+    //firstone.get_pointcloud();
     const char* depth_win="depth_Image";
     namedWindow(depth_win,WINDOW_AUTOSIZE);
     const char* color_win="color_Image";
@@ -40,17 +40,22 @@ int main()
         //创建OPENCV类型 并传入数据
         firstone.depth=Mat(Size(depth_w,depth_h),
                                 CV_16U,(void*)depth_frame.get_data(),Mat::AUTO_STEP);
-        Mat depth_image_4_show(Size(depth_w,depth_h),
+        firstone.depth_color=Mat(Size(depth_w,depth_h),
                                 CV_8UC3,(void*)depth_frame_4_show.get_data(),Mat::AUTO_STEP);
         firstone.color=Mat(Size(color_w,color_h),
                                 CV_8UC3,(void*)color_frame.get_data(),Mat::AUTO_STEP);
         //实现深度图对齐到彩色图
-        Mat result=firstone.align_Depth2Color();
- 
+        firstone.result=firstone.align_Depth2Color();
+
+        
+
         //显示
-        imshow(depth_win,depth_image_4_show);
+        imshow(depth_win,firstone.depth_color);
         imshow(color_win,firstone.color);
-        imshow("result",result);
+        imshow("result",firstone.result);
+        imwrite("/home/yons/File/realsense/res/depth.JPG",firstone.depth_color);
+        imwrite("/home/yons/File/realsense/res/color.JPG",firstone.color);
+
         waitKey(10);
     }
     return 0;

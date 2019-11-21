@@ -11,10 +11,20 @@
 #include <librealsense2/rs.hpp>
 #include <librealsense2/rsutil.h>
 
+#include <pcl-1.8/pcl/io/pcd_io.h>
+#include <pcl-1.8/pcl/io/ply_io.h>
+#include <pcl-1.8/pcl/point_types.h>
+#include <pcl-1.8/pcl/point_cloud.h>
+#include <pcl-1.8/pcl/visualization/pcl_visualizer.h>
+
 #include "example.hpp"
 
 using namespace std;
 using namespace cv;
+
+typedef pcl::PointXYZ PointT;
+typedef pcl::PointCloud<PointT> PointCloudT;
+
 
 class MYREALSENSE
 {
@@ -23,6 +33,8 @@ public:
     Mat depth;
     Mat color;
     Mat result;
+    Mat depth_color;
+    PointCloudT::Ptr targetcloud;
     int depth_width;
     int depth_height;
     int color_width;
@@ -36,6 +48,8 @@ public:
     float get_depth_scale(rs2::device dev);
     Mat align_Depth2Color();
     int get_pointcloud();
+
+    
 };
 
 

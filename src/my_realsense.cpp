@@ -1,4 +1,5 @@
 #include "my_realsense.hpp"
+#include <iostream>
 
 
 MYREALSENSE::MYREALSENSE(/* args */)
@@ -14,6 +15,7 @@ MYREALSENSE::MYREALSENSE(/* args */)
     //pipe.start();
     depth=Mat(Size(640,480),CV_16UC1);
     color=Mat(Size(640,480),CV_8UC3);
+    
 }
 
 MYREALSENSE::~MYREALSENSE()
@@ -34,6 +36,7 @@ float MYREALSENSE::get_depth_scale(rs2::device dev)
 
 Mat MYREALSENSE::align_Depth2Color()
 {
+    targetcloud=PointCloudT::Ptr (new PointCloudT);
     auto depth_stream=profile.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>();
     auto color_stream=profile.get_stream(RS2_STREAM_COLOR).as<rs2::video_stream_profile>();
     const auto intrinDepth=depth_stream.get_intrinsics();
@@ -61,7 +64,8 @@ Mat MYREALSENSE::align_Depth2Color()
             rs2_deproject_pixel_to_point(Pdc3,&intrinDepth,pd_uv,depth_in_meter);
             rs2_transform_point_to_point(Pcc3,&extrinDepth2Color,Pdc3);
             rs2_project_point_to_pixel(pc_uv,&intrinColor,Pcc3);
-
+            //std::cout<<Pdc3[0]<<' '<<Pdc3[1]<<' '<<Pdc3[2]<<std::endl;
+            targetcloud->points.push_back(PointT(Pdc3[0]*1000,Pdc3[1]*1000,Pdc3[2]*1000));
             x=(int)pc_uv[0];
             y=(int)pc_uv[1];
 
@@ -69,7 +73,6 @@ Mat MYREALSENSE::align_Depth2Color()
             x=x>depth.cols-1?depth.cols-1:x;
             y=y<0?0:y;
             y=y>depth.rows-1?depth.rows-1:y;
-
             for(int k=0;k<3;k++)
             {
                 if(depth_in_meter<1)
@@ -77,6 +80,8 @@ Mat MYREALSENSE::align_Depth2Color()
             }
         }
     }
+    pcl::io::savePLYFileASCII("/home/yons/File/realsense/res/pointcloud.ply", *targetcloud);
+    exit(0);
     return result;
 
 }
@@ -100,7 +105,6 @@ try
         pc.map_to(color_frame);
 
         rs2::frame depth_frame=frames.get_depth_frame();
-
         points=pc.calculate(depth_frame);
 
         app_state.tex.upload(color_frame);
