@@ -5,6 +5,16 @@ cmake_minimum_required(VERSION 3.5)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 add_compile_options(-std=c++11)
 
+#Find PCL
+#########################################################
+find_package(PCL 1.8 REQUIRED COMPONENTS common io kdtree features visualization recognition)
+
+if(PCL_FOUND)
+	message("PCL found")
+	include_directories(${PCL_INCLUDE_DIRS})
+	add_definitions(${PCL_DEFINITIONS})
+endif()
+
 
 # FIND GLUT
 #########################################################
@@ -47,5 +57,5 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 add_executable(realsense src/get_depth.cpp src/pointcloud.cpp src/example.cpp src/my_realsense.cpp src/main.cpp )
 
 
-target_link_libraries(realsense ${OpenCV_LIBS} ${OPENGL_LIBRARIES} ${GLUT_LIBRARY} glfw)
+target_link_libraries(realsense ${OpenCV_LIBS}  ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES} ${PCL_KDTREE_LIBRARIES} ${PCL_FEATURES_LIBRARIES} ${PCL_VISUALIZATION_LIBRARIES} ${PCL_RECOGNITION_LIBRARIES} ${OPENGL_LIBRARIES} ${GLUT_LIBRARY} glfw)
 target_link_libraries(realsense realsense2)
