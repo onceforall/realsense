@@ -3,7 +3,7 @@
 int get_pointcloud()
 try
 {
-    window app(1280,720,"pointcloud example");
+    window app(640,480,"pointcloud example");
     glfw_state app_state;
     register_glfw_callbacks(app,app_state);
 
@@ -11,7 +11,12 @@ try
     rs2::points points;
 
     rs2::pipeline pipe;
-    pipe.start();
+    rs2::config cfg;
+    cfg.enable_stream(RS2_STREAM_INFRARED, 1, 640, 480, RS2_FORMAT_Y8, 30);
+    cfg.enable_stream(RS2_STREAM_INFRARED, 2, 640, 480, RS2_FORMAT_Y8, 30);
+    cfg.enable_stream(RS2_STREAM_DEPTH, 640, 480, RS2_FORMAT_Z16, 30);
+    
+    pipe.start(cfg);
 
     while(app)
     {

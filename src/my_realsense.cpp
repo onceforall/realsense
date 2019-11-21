@@ -4,11 +4,14 @@
 MYREALSENSE::MYREALSENSE(/* args */)
 {
     
-    rs2::config pipe_config;
-    //pipe_config.enable_stream(RS2_STREAM_DEPTH,640,480,RS2_FORMAT_Z16,30);
-    //pipe_config.enable_stream(RS2_STREAM_COLOR,640,480,RS2_FORMAT_BGR8,30);
-    //profile=pipe.start(pipe_config);
-    pipe.start();
+ 
+    rs2::config cfg;
+    cfg.enable_stream(RS2_STREAM_INFRARED, 1, 640, 480, RS2_FORMAT_Y8, 30);
+    cfg.enable_stream(RS2_STREAM_INFRARED, 2, 640, 480, RS2_FORMAT_Y8, 30);
+    cfg.enable_stream(RS2_STREAM_DEPTH, 640, 480, RS2_FORMAT_Z16, 30);
+    cfg.enable_stream(RS2_STREAM_COLOR,640,480,RS2_FORMAT_RGB8,30);
+    profile=pipe.start(cfg);
+    //pipe.start();
     depth=Mat(Size(640,480),CV_16UC1);
     color=Mat(Size(640,480),CV_8UC3);
 }
@@ -89,14 +92,14 @@ try
     rs2::points points;
     while(app)
     {
-        auto frames=pipe.wait_for_frames();
-        auto color_frame=frames.get_color_frame();
+        rs2::frameset  frames=pipe.wait_for_frames();
+        rs2::frame color_frame=frames.get_color_frame();
 
         if(!color_frame)
             color_frame=frames.get_infrared_frame();
         pc.map_to(color_frame);
 
-        auto depth_frame=frames.get_depth_frame();
+        rs2::frame depth_frame=frames.get_depth_frame();
 
         points=pc.calculate(depth_frame);
 
