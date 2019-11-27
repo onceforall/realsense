@@ -1,14 +1,12 @@
-
+#include "feature_extract.h"
 #include "get_depth.hpp"
 #include "pointcloud.hpp"
 #include "my_realsense.hpp"
 
 int main()
 {
-    //get_depth();
-    //get_pointcloud();
     MYREALSENSE firstone;
-    //firstone.get_pointcloud();
+    firstone.get_LR();
     rs2::colorizer c; 
     namedWindow(firstone.depth_win,WINDOW_AUTOSIZE);
     namedWindow(firstone.color_win,WINDOW_AUTOSIZE);

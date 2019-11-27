@@ -54,12 +54,15 @@ public:
     Mat align_Depth2Color();
     int get_pointcloud();
     void view_pointcloud();
+    int get_LR();
 private:
     PointCloudT::Ptr out_pointcloud;
     boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
     const int screen_width=2560;
     const int screen_height=1080;
     const string WindowName="Realsense Output PointCloud";
+    const int pic_width=640;
+    const int pic_height=480;
 };
 
 

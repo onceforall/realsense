@@ -1,23 +1,22 @@
 #include "my_realsense.hpp"
 #include <iostream>
-
+#include "feature_extract.h"
 
 MYREALSENSE::MYREALSENSE(/* args */)
 {
     rs2::config cfg;
-    cfg.enable_stream(RS2_STREAM_INFRARED, 1, 640, 480, RS2_FORMAT_Y8, 30);
-    cfg.enable_stream(RS2_STREAM_INFRARED, 2, 640, 480, RS2_FORMAT_Y8, 30);
-    cfg.enable_stream(RS2_STREAM_DEPTH, 640, 480, RS2_FORMAT_Z16, 30);
-    cfg.enable_stream(RS2_STREAM_COLOR,640,480,RS2_FORMAT_RGB8,30);
+    cfg.enable_stream(RS2_STREAM_INFRARED, 1, pic_width, pic_height, RS2_FORMAT_Y8, 30);
+    cfg.enable_stream(RS2_STREAM_INFRARED, 2, pic_width, pic_height, RS2_FORMAT_Y8, 30);
+    cfg.enable_stream(RS2_STREAM_DEPTH, pic_width, pic_height, RS2_FORMAT_Z16, 30);
+    cfg.enable_stream(RS2_STREAM_COLOR,pic_width,pic_height,RS2_FORMAT_RGB8,30);
     
     profile=pipe.start(cfg);
 
     auto sensor=profile.get_device().first<rs2::depth_sensor>();                                        //find the first device you use
     sensor.set_option(rs2_option::RS2_OPTION_VISUAL_PRESET,rs2_rs400_visual_preset::RS2_RS400_VISUAL_PRESET_HIGH_ACCURACY);  //prest the visual mode to HIGH_DENSITY
     //pipe.start();
-    depth=Mat(Size(640,480),CV_16UC1);
-    color=Mat(Size(640,480),CV_8UC3);
-    out_pointcloud=PointCloudT::Ptr (new PointCloudT);
+    depth=Mat(Size(pic_width,pic_height),CV_16UC1);
+    color=Mat(Size(pic_width,pic_height),CV_8UC3);
 }
 
 MYREALSENSE::~MYREALSENSE()
@@ -38,7 +37,7 @@ float MYREALSENSE::get_depth_scale(rs2::device dev)
 
 Mat MYREALSENSE::align_Depth2Color()
 {
-  
+    out_pointcloud=PointCloudT::Ptr (new PointCloudT);
     auto depth_stream=profile.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>();
     auto color_stream=profile.get_stream(RS2_STREAM_COLOR).as<rs2::video_stream_profile>();
     const auto intrinDepth=depth_stream.get_intrinsics();
@@ -92,7 +91,7 @@ Mat MYREALSENSE::align_Depth2Color()
 int MYREALSENSE::get_pointcloud()
 try
 {
-    window app(640,480,"pointcloud example");
+    window app(pic_width,pic_width,"pointcloud example");
     glfw_state app_state;
     register_glfw_callbacks(app,app_state);
 
@@ -143,4 +142,52 @@ void MYREALSENSE::view_pointcloud()
 		//boost::this_thread::sleep(boost::posix_time::microseconds(10));
         viewer->close();
 	}
+}
+
+int MYREALSENSE::get_LR()
+try
+{
+    FEATURE_EXTRACT feature_extractor;
+    while (true)
+    {
+        rs2::frameset frames=pipe.wait_for_frames();
+        rs2::depth_frame depth=frames.get_depth_frame();
+        rs2::video_frame ir_frame_left = frames.get_infrared_frame(1);
+		rs2::video_frame ir_frame_right = frames.get_infrared_frame(2);
+
+		cv::Mat dMat_left = cv::Mat(cv::Size(pic_width, pic_height), CV_8UC1, (void*)ir_frame_left.get_data());
+		cv::Mat dMat_right = cv::Mat(cv::Size(pic_width, pic_height), CV_8UC1, (void*)ir_frame_right.get_data());
+        cv::Mat dMat_depth=cv::Mat(cv::Size(pic_width,pic_height),CV_8UC1,(void*)depth.get_data());
+
+		cv::imshow("img_l", dMat_left);
+		cv::imshow("img_r", dMat_right);
+        cv::imshow("depth",dMat_depth);
+        //cv::imwrite("/home/yons/projects/realsense/res/left.jpg",dMat_left);
+        //cv::imwrite("/home/yons/projects/realsense/res/right.jpg",dMat_right);
+        //feature_extractor.imgL=cv::imread("/home/yons/projects/realsense/res/left.jpg");
+        //feature_extractor.imgR=cv::imread("/home/yons/projects/realsense/res/right.jpg");
+        feature_extractor.imgL=dMat_left;
+        feature_extractor.imgR=dMat_right;
+        feature_extractor.getdsp();
+        feature_extractor.goodmatcher();
+        feature_extractor.get_homography();
+		char c = cv::waitKey(30);
+
+        //float width=depth.get_width();
+        //float height=depth.get_height();
+        
+        //float dist_to_center=depth.get_distance(width/2,height/2);
+        //std::cout<<"The camera is facing an object "<<dist_to_center<<" meters away \r";
+    }
+    return EXIT_SUCCESS;
+}
+catch(const rs2::error & e)
+{
+    std::cerr << "Realsense error calling " <<e.get_failed_function()<<"("<<e.get_failed_args()<<"):\n   "<<e.what()<< '\n';
+    return EXIT_FAILURE;
+}
+catch(const std::exception & e)
+{
+    std::cerr<<e.what()<<std::endl;
+    return EXIT_FAILURE;
 }
