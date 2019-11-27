@@ -4,18 +4,20 @@
 
 MYREALSENSE::MYREALSENSE(/* args */)
 {
-    
- 
     rs2::config cfg;
     cfg.enable_stream(RS2_STREAM_INFRARED, 1, 640, 480, RS2_FORMAT_Y8, 30);
     cfg.enable_stream(RS2_STREAM_INFRARED, 2, 640, 480, RS2_FORMAT_Y8, 30);
     cfg.enable_stream(RS2_STREAM_DEPTH, 640, 480, RS2_FORMAT_Z16, 30);
     cfg.enable_stream(RS2_STREAM_COLOR,640,480,RS2_FORMAT_RGB8,30);
+    
     profile=pipe.start(cfg);
+
+    auto sensor=profile.get_device().first<rs2::depth_sensor>();                                        //find the first device you use
+    sensor.set_option(rs2_option::RS2_OPTION_VISUAL_PRESET,rs2_rs400_visual_preset::RS2_RS400_VISUAL_PRESET_HIGH_ACCURACY);  //prest the visual mode to HIGH_DENSITY
     //pipe.start();
     depth=Mat(Size(640,480),CV_16UC1);
     color=Mat(Size(640,480),CV_8UC3);
-    
+    out_pointcloud=PointCloudT::Ptr (new PointCloudT);
 }
 
 MYREALSENSE::~MYREALSENSE()
@@ -36,7 +38,7 @@ float MYREALSENSE::get_depth_scale(rs2::device dev)
 
 Mat MYREALSENSE::align_Depth2Color()
 {
-    targetcloud=PointCloudT::Ptr (new PointCloudT);
+  
     auto depth_stream=profile.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>();
     auto color_stream=profile.get_stream(RS2_STREAM_COLOR).as<rs2::video_stream_profile>();
     const auto intrinDepth=depth_stream.get_intrinsics();
@@ -51,7 +53,7 @@ Mat MYREALSENSE::align_Depth2Color()
 
     float depth_scale=get_depth_scale(profile.get_device());
 
-    Mat result=Mat::zeros(color.rows,color.cols,CV_8UC3);
+    result=Mat::zeros(color.rows,color.cols,CV_8UC3);
     int y=0,x=0;
     for(int row=0;row<depth.rows;row++)
     {
@@ -65,7 +67,7 @@ Mat MYREALSENSE::align_Depth2Color()
             rs2_transform_point_to_point(Pcc3,&extrinDepth2Color,Pdc3);
             rs2_project_point_to_pixel(pc_uv,&intrinColor,Pcc3);
             //std::cout<<Pdc3[0]<<' '<<Pdc3[1]<<' '<<Pdc3[2]<<std::endl;
-            targetcloud->points.push_back(PointT(Pdc3[0]*1000,Pdc3[1]*1000,Pdc3[2]*1000));
+            out_pointcloud->points.push_back(PointT(Pdc3[0]*1000,Pdc3[1]*1000,Pdc3[2]*1000));
             x=(int)pc_uv[0];
             y=(int)pc_uv[1];
 
@@ -80,8 +82,9 @@ Mat MYREALSENSE::align_Depth2Color()
             }
         }
     }
-    pcl::io::savePLYFileASCII("/home/yons/File/realsense/res/pointcloud.ply", *targetcloud);
-    exit(0);
+     //显示 
+    pcl::io::savePLYFileASCII("/home/yons/projects/realsense/res/pointcloud.ply", *out_pointcloud); 
+    view_pointcloud();
     return result;
 
 }
@@ -122,4 +125,22 @@ catch (const std::exception & e)
 {
     std::cerr << e.what() << std::endl;
     return EXIT_FAILURE;
+}
+
+
+
+void MYREALSENSE::view_pointcloud()
+{
+	viewer = boost::shared_ptr<pcl::visualization::PCLVisualizer>(new pcl::visualization::PCLVisualizer(WindowName));
+	viewer->addPointCloud(out_pointcloud, WindowName);
+	viewer->resetCameraViewpoint(WindowName);
+	viewer->addCoordinateSystem(10);
+	//viewer->setFullScreen(true); // Visualiser window size
+	viewer->setSize(screen_width,screen_height);
+	while (!viewer->wasStopped())
+	{
+		viewer->spin();
+		//boost::this_thread::sleep(boost::posix_time::microseconds(10));
+        viewer->close();
+	}
 }
