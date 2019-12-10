@@ -4,28 +4,30 @@ using namespace cv;
 using namespace std;
 
 
- void FEATURE_EXTRACT::getdsp()
- {
-     Mat imgl,imgr;
-     GaussianBlur(imgL,imgl,Size(3,3),0.5);
-     GaussianBlur(imgR,imgr,Size(3,3),0.5);
+void FEATURE_EXTRACT::getdsp()
+{
+    Mat imgl,imgr;
+    GaussianBlur(imgL,imgl,Size(3,3),0.5);
+    GaussianBlur(imgR,imgr,Size(3,3),0.5);
     
-     Ptr<Feature2D> sift=xfeatures2d::SIFT::create();
-     sift->detect(imgl,keypointsL);
-     sift->detect(imgr,keypointsR);
-     sift->compute(imgl,keypointsL,descriptorsL); 
-     sift->compute(imgr,keypointsR,descriptorsR);
- }
+    Ptr<Feature2D> sift=xfeatures2d::SIFT::create();
+    sift->detect(imgl,keypointsL);
+    sift->detect(imgr,keypointsR);
+    sift->compute(imgl,keypointsL,descriptorsL); 
+    sift->compute(imgr,keypointsR,descriptorsR);
+}
+
 
 void  FEATURE_EXTRACT::goodmatcher()
 {
-    using namespace std;
-    const int k=2;
-    const float ratio=0.75;//1.f/1.5f;
+    getdsp();
+    if(descriptorsL.empty() || descriptorsR.empty() || keypointsL.empty() || keypointsR.empty())
+        return;
+
+    const float ratio=0.6;//1.f/1.5f;
     BFMatcher matcher(NORM_L2,false);
-    vector<DMatch> goodmatch;
-    Mat matchimg;
     matcher.knnMatch(descriptorsL,descriptorsR,match,2);
+    
     for(size_t i=0;i<match.size();i++)
     {
         const DMatch& bestmatch=match[i][0];
@@ -34,19 +36,23 @@ void  FEATURE_EXTRACT::goodmatcher()
         if(distanceRatio<ratio)
             goodmatch.push_back(bestmatch);
     }
-    std::sort(goodmatch.begin(), goodmatch.end());
+    sort(goodmatch.begin(), goodmatch.end());
+
     if(goodmatch.size()>4)
     {
-        for(size_t i=0;i<goodmatch.size()*0.3;i++)
+        for(size_t i=0;i<goodmatch.size();i++)
         {
             psL.push_back(keypointsL[goodmatch[i].queryIdx].pt);
             psR.push_back(keypointsR[goodmatch[i].trainIdx].pt);
         }
-        goodmatch.clear();
-        drawMatches(imgL,keypointsL,imgR,keypointsR,goodmatch,matchimg,(0,255,0),(255,0,0));
-        imwrite("/home/yons/projects/realsense/res/match.png",matchimg);
+        //cout<<keypointsL.size()<<' '<<keypointsR.size()<<' '<<goodmatch.size()<<' '<<matchimg.size()<<endl;
+        //drawMatches(imgL,keypointsL,imgR,keypointsR,match,matchimg);
+        //imwrite("/home/yons/projects/realsense/res/match.png",matchimg);
     }
+    goodmatch.clear();
 }
+
+
 void FEATURE_EXTRACT::printmatrix()
 {
     int rows=homo.size[0];
@@ -64,6 +70,8 @@ void FEATURE_EXTRACT::printmatrix()
     }    
     cout<<endl;
 }
+
+
 void FEATURE_EXTRACT::get_homography()
 {
     homo=findHomography(psL,psR,RANSAC);
