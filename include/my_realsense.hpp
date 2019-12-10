@@ -17,7 +17,17 @@
 #include <pcl-1.8/pcl/point_cloud.h>
 #include <pcl-1.8/pcl/visualization/pcl_visualizer.h>
 
+
+#include <pcl/ModelCoefficients.h>
+#include <pcl/sample_consensus/method_types.h>
+#include <pcl/sample_consensus/model_types.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/filters/extract_indices.h>
+
+
 #include "example.hpp"
+#include "feature_extract.h"
 
 using namespace std;
 using namespace cv;
@@ -55,10 +65,15 @@ public:
     float get_depth_scale(rs2::device dev);
     Mat align_Depth2Color();
     int get_pointcloud();
-    void view_pointcloud();
+    void view_pointcloud(PointCloudT::Ptr cloud);
     int get_LR();
+    int extract_target();
 private:
-    PointCloudT::Ptr out_pointcloud;
+    PointCloudT::Ptr cloud_realsense;
+    PointCloudT::Ptr cloud_filtered;
+    PointCloudT::Ptr cloud_plane;
+    PointCloudT::Ptr cloud_f;
+    PointCloudT::Ptr target;
     boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
     const int screen_width=2560;
     const int screen_height=1080;

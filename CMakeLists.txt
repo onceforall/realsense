@@ -7,12 +7,13 @@ add_compile_options(-std=c++11)
 
 #Find PCL
 #########################################################
-find_package(PCL 1.8 REQUIRED COMPONENTS common io kdtree features visualization recognition)
+find_package(PCL 1.2 REQUIRED COMPONENTS common io kdtree features visualization recognition segmentation sample_consensus)
 
 if(PCL_FOUND)
 	message("PCL found")
-	include_directories(${PCL_INCLUDE_DIRS})
-	add_definitions(${PCL_DEFINITIONS})
+    include_directories(${PCL_INCLUDE_DIRS})
+    link_directories(${PCL_LIBRARY_DIRS})
+    add_definitions(${PCL_DEFINITIONS})
 endif()
 
 
@@ -56,6 +57,5 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 
 add_executable(realsense src/feature_extract.cpp src/get_depth.cpp src/pointcloud.cpp src/example.cpp src/my_realsense.cpp src/main.cpp )
 
-
-target_link_libraries(realsense ${OpenCV_LIBS}  ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES} ${PCL_KDTREE_LIBRARIES} ${PCL_FEATURES_LIBRARIES} ${PCL_VISUALIZATION_LIBRARIES} ${PCL_RECOGNITION_LIBRARIES} ${OPENGL_LIBRARIES} ${GLUT_LIBRARY} glfw)
+target_link_libraries(realsense ${OpenCV_LIBS}  ${PCL_LIBRARIES}  ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES} ${PCL_KDTREE_LIBRARIES} ${PCL_FEATURES_LIBRARIES} ${PCL_VISUALIZATION_LIBRARIES} ${PCL_RECOGNITION_LIBRARIES}  ${OPENGL_LIBRARIES} ${GLUT_LIBRARY} glfw)
 target_link_libraries(realsense realsense2)

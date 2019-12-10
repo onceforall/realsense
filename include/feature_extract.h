@@ -6,6 +6,7 @@
 #include <vector>
 
 using namespace cv;
+using namespace std;
 class FEATURE_EXTRACT
 {
 public:
@@ -18,11 +19,13 @@ public:
       Mat imgL;
       Mat imgR;
 private:
-      std::vector<KeyPoint> keypointsL,keypointsR;
+      vector<KeyPoint> keypointsL,keypointsR;
       Mat descriptorsL,descriptorsR;
-      std::vector<std::vector<DMatch>> match;
-      std::vector<DMatch> goomatch;
-      std::vector<Point2f> psL,psR;
+      vector<std::vector<DMatch>> match;
+      vector<DMatch> goomatch;
+      vector<Point2f> psL,psR;
+      vector<DMatch> goodmatch;
+      Mat matchimg;
       Mat homo;
       const int pic_width=640;
       const int pic_height=480;
