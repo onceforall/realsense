@@ -9,7 +9,7 @@ using namespace cv;
 class FEATURE_EXTRACT
 {
 public:
-      FEATURE_EXTRACT(){};
+      FEATURE_EXTRACT();
       virtual ~FEATURE_EXTRACT(){};  
       void getdsp();
       void goodmatcher();
@@ -24,4 +24,6 @@ private:
       std::vector<DMatch> goomatch;
       std::vector<Point2f> psL,psR;
       Mat homo;
+      const int pic_width=640;
+      const int pic_height=480;
 };

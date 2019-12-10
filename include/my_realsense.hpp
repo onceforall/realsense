@@ -30,8 +30,10 @@ class MYREALSENSE
 {
 public:
     /* data */
-    Mat depth;
-    Mat color;
+    Mat dMat_left;
+    Mat dMat_right;
+    Mat dMat_depth;
+    Mat dMat_color;
     Mat result;
     Mat depth_color;
     PointCloudT::Ptr targetcloud;

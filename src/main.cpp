@@ -6,7 +6,8 @@
 int main()
 {
     MYREALSENSE firstone;
-    firstone.get_LR();
+    //firstone.get_pointcloud();
+    //firstone.get_LR();
     rs2::colorizer c; 
     namedWindow(firstone.depth_win,WINDOW_AUTOSIZE);
     namedWindow(firstone.color_win,WINDOW_AUTOSIZE);
@@ -33,19 +34,19 @@ int main()
         firstone.color_h=color_frame.as<rs2::video_frame>().get_height();
  
         //创建OPENCV类型 并传入数据
-        firstone.depth=Mat(Size(firstone.depth_w,firstone.depth_h),
+        firstone.dMat_depth=Mat(Size(firstone.depth_w,firstone.depth_h),
                                 CV_16U,(void*)depth_frame.get_data(),Mat::AUTO_STEP);
         firstone.depth_color=Mat(Size(firstone.depth_w,firstone.depth_h),
                                 CV_8UC3,(void*)depth_frame_4_show.get_data(),Mat::AUTO_STEP);
-        firstone.color=Mat(Size(firstone.color_w,firstone.color_h),
+        firstone.dMat_color=Mat(Size(firstone.color_w,firstone.color_h),
                                 CV_8UC3,(void*)color_frame.get_data(),Mat::AUTO_STEP);
         //实现深度图对齐到彩色图
         firstone.result=firstone.align_Depth2Color();
         imshow(firstone.depth_win,firstone.depth_color);
-        imshow(firstone.color_win,firstone.color);
+        imshow(firstone.color_win,firstone.dMat_color);
         imshow("result",firstone.result);
-        imwrite("/home/yons/projects/realsense/res/depth.JPG",firstone.depth_color);
-        imwrite("/home/yons/projects/realsense/res/color.JPG",firstone.color);
+        //imwrite("/home/yons/projects/realsense/res/depth.JPG",firstone.depth_color);
+        //imwrite("/home/yons/projects/realsense/res/color.JPG",firstone.dMat_color);
         waitKey(10);
     }
     return 0;

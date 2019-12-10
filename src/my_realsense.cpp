@@ -15,8 +15,8 @@ MYREALSENSE::MYREALSENSE(/* args */)
     auto sensor=profile.get_device().first<rs2::depth_sensor>();                                        //find the first device you use
     sensor.set_option(rs2_option::RS2_OPTION_VISUAL_PRESET,rs2_rs400_visual_preset::RS2_RS400_VISUAL_PRESET_HIGH_ACCURACY);  //prest the visual mode to HIGH_DENSITY
     //pipe.start();
-    depth=Mat(Size(pic_width,pic_height),CV_16UC1);
-    color=Mat(Size(pic_width,pic_height),CV_8UC3);
+    dMat_depth=Mat(Size(pic_width,pic_height),CV_16UC1);
+    dMat_color=Mat(Size(pic_width,pic_height),CV_8UC3);
 }
 
 MYREALSENSE::~MYREALSENSE()
@@ -52,15 +52,15 @@ Mat MYREALSENSE::align_Depth2Color()
 
     float depth_scale=get_depth_scale(profile.get_device());
 
-    result=Mat::zeros(color.rows,color.cols,CV_8UC3);
+    result=Mat::zeros(dMat_color.rows,dMat_color.cols,CV_8UC3);
     int y=0,x=0;
-    for(int row=0;row<depth.rows;row++)
+    for(int row=0;row<dMat_depth.rows;row++)
     {
-        for(int col=0;col<depth.cols;col++)
+        for(int col=0;col<dMat_depth.cols;col++)
         {
             pd_uv[0]=col;
             pd_uv[1]=row;
-            uint16_t depth_value=depth.at<uint16_t>(row,col);
+            uint16_t depth_value=dMat_depth.at<uint16_t>(row,col);
             float depth_in_meter=depth_value*depth_scale;
             rs2_deproject_pixel_to_point(Pdc3,&intrinDepth,pd_uv,depth_in_meter);
             rs2_transform_point_to_point(Pcc3,&extrinDepth2Color,Pdc3);
@@ -71,13 +71,13 @@ Mat MYREALSENSE::align_Depth2Color()
             y=(int)pc_uv[1];
 
             x=x<0?0:x;
-            x=x>depth.cols-1?depth.cols-1:x;
+            x=x>dMat_depth.cols-1?dMat_depth.cols-1:x;
             y=y<0?0:y;
-            y=y>depth.rows-1?depth.rows-1:y;
+            y=y>dMat_depth.rows-1?dMat_depth.rows-1:y;
             for(int k=0;k<3;k++)
             {
                 if(depth_in_meter<1)
-                    result.at<cv::Vec3b>(y,x)[k]=color.at<cv::Vec3b>(y,x)[k];
+                    result.at<cv::Vec3b>(y,x)[k]=dMat_color.at<cv::Vec3b>(y,x)[k];
             }
         }
     }
@@ -150,24 +150,29 @@ try
     FEATURE_EXTRACT feature_extractor;
     while (true)
     {
-        rs2::frameset frames=pipe.wait_for_frames();
-        rs2::depth_frame depth=frames.get_depth_frame();
+        rs2::frameset frames=pipe.wait_for_frames(30);
+        rs2::frame color_frame=frames.get_color_frame();
+        rs2::depth_frame depth_frame=frames.get_depth_frame();
         rs2::video_frame ir_frame_left = frames.get_infrared_frame(1);
 		rs2::video_frame ir_frame_right = frames.get_infrared_frame(2);
 
-		cv::Mat dMat_left = cv::Mat(cv::Size(pic_width, pic_height), CV_8UC1, (void*)ir_frame_left.get_data());
-		cv::Mat dMat_right = cv::Mat(cv::Size(pic_width, pic_height), CV_8UC1, (void*)ir_frame_right.get_data());
-        cv::Mat dMat_depth=cv::Mat(cv::Size(pic_width,pic_height),CV_8UC1,(void*)depth.get_data());
-
-		cv::imshow("img_l", dMat_left);
-		cv::imshow("img_r", dMat_right);
+		dMat_left = cv::Mat(cv::Size(pic_width, pic_height), CV_8UC1, (void*)ir_frame_left.get_data());
+		dMat_right = cv::Mat(cv::Size(pic_width, pic_height), CV_8UC1, (void*)ir_frame_right.get_data());
+        dMat_depth=cv::Mat(cv::Size(pic_width,pic_height),CV_8UC1,(void*)depth_frame.get_data());
+        dMat_color=cv::Mat(cv::Size(pic_width,pic_height),CV_8UC3,(void*)color_frame.get_data());
+		
+        cv::imshow("img_color", dMat_color);
+		//cv::imshow("img_r", dMat_right);
         cv::imshow("depth",dMat_depth);
-        //cv::imwrite("/home/yons/projects/realsense/res/left.jpg",dMat_left);
+
+        cv::imwrite("/home/yons/projects/realsense/res/color.jpg",dMat_color);
         //cv::imwrite("/home/yons/projects/realsense/res/right.jpg",dMat_right);
         //feature_extractor.imgL=cv::imread("/home/yons/projects/realsense/res/left.jpg");
-        //feature_extractor.imgR=cv::imread("/home/yons/projects/realsense/res/right.jpg");
-        feature_extractor.imgL=dMat_left;
-        feature_extractor.imgR=dMat_right;
+        dMat_color.copyTo(feature_extractor.imgL);
+        feature_extractor.imgR=cv::imread("/home/yons/Documents/Wzx/before/preprocessed/2.jpg");
+        cv::resize(feature_extractor.imgR,feature_extractor.imgR,feature_extractor.imgL.size());
+        cout<<feature_extractor.imgL.size()<<' '<<feature_extractor.imgR.size()<<endl;
+        //feature_extractor.imgR=dMat_right;
         feature_extractor.getdsp();
         feature_extractor.goodmatcher();
         feature_extractor.get_homography();

@@ -2,8 +2,11 @@
 
 using namespace cv;
 using namespace std;
-
-
+FEATURE_EXTRACT::FEATURE_EXTRACT()
+{
+    imgL=Mat(Size(pic_width,pic_height),CV_8UC3);
+    imgR=Mat(Size(pic_width,pic_height),CV_8UC3);
+}
  void FEATURE_EXTRACT::getdsp()
  {
      Mat imgl,imgr;
@@ -42,10 +45,11 @@ void  FEATURE_EXTRACT::goodmatcher()
             psL.push_back(keypointsL[goodmatch[i].queryIdx].pt);
             psR.push_back(keypointsR[goodmatch[i].trainIdx].pt);
         }
-        goodmatch.clear();
+        //goodmatch.clear();
         drawMatches(imgL,keypointsL,imgR,keypointsR,goodmatch,matchimg,(0,255,0),(255,0,0));
         imwrite("/home/yons/projects/realsense/res/match.png",matchimg);
     }
+    goodmatch.clear();
 }
 void FEATURE_EXTRACT::printmatrix()
 {
