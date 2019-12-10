@@ -74,6 +74,10 @@ private:
     PointCloudT::Ptr cloud_plane;
     PointCloudT::Ptr cloud_f;
     PointCloudT::Ptr target;
+    pcl::PCLPointCloud2::Ptr cloud_blob;
+    pcl::PCLPointCloud2::Ptr cloud_blob_filtered;
+    PointCloudT::Ptr cloud_filtered_backup;
+
     boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
     const int screen_width=2560;
     const int screen_height=1080;

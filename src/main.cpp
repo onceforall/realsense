@@ -7,9 +7,6 @@ int main()
 {
     MYREALSENSE firstone;
     //firstone.get_LR();
-    firstone.extract_target();
-    return 0;
-
     rs2::colorizer c; 
     namedWindow(firstone.depth_win,WINDOW_AUTOSIZE);
     namedWindow(firstone.color_win,WINDOW_AUTOSIZE);

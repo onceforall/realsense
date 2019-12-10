@@ -17,11 +17,14 @@ MYREALSENSE::MYREALSENSE(/* args */)
     //pipe.start();
     dMat_depth=Mat(Size(pic_width,pic_height),CV_16UC1);
     dMat_color=Mat(Size(pic_width,pic_height),CV_8UC3);
-    cloud_realsense=PointCloudT::Ptr (new PointCloudT);
+    
     cloud_filtered=PointCloudT::Ptr(new PointCloudT);
     cloud_plane=PointCloudT::Ptr(new PointCloudT);
     cloud_f=PointCloudT::Ptr(new PointCloudT);
     target=PointCloudT::Ptr(new PointCloudT);
+    cloud_blob=pcl::PCLPointCloud2::Ptr(new pcl::PCLPointCloud2);
+    cloud_blob_filtered=pcl::PCLPointCloud2::Ptr(new pcl::PCLPointCloud2);
+    cloud_filtered_backup=PointCloudT::Ptr(new PointCloudT);
 }
 
 MYREALSENSE::~MYREALSENSE()
@@ -31,47 +34,38 @@ MYREALSENSE::~MYREALSENSE()
 
 int MYREALSENSE::extract_target()
 {
-    //pcl::PCLPointCloud2::Ptr cloud_blob (new pcl::PCLPointCloud2);
-
-    pcl::PCDReader reader;
-    reader.read ("/home/yons/projects/realsense/data/table_scene_lms400.pcd", *cloud_realsense);
-
-    std::cerr << "PointCloud before filtering: " << cloud_realsense->width * cloud_realsense->height << " data points." << std::endl;
-   
-    //pcl::fromPCLPointCloud2 (*cloud_blob, *cloud_realsense);
+    view_pointcloud(cloud_realsense);
+    std::cerr << "PointCloud before filtering: " << cloud_realsense->points.size()<< " data points." << std::endl;
     // Create the filtering object: downsample the dataset using a leaf size of 1cm
     pcl::VoxelGrid<PointT> sor;
     sor.setInputCloud (cloud_realsense);
-    sor.setLeafSize (0.01f, 0.01f, 0.01f);
+    sor.setLeafSize (0.1f, 0.1f, 0.1f);
     sor.filter (*cloud_filtered);
-    // Convert to the templated PointCloud
-    std::cerr<<"Pointcloud after filtering: "<<cloud_filtered->width*cloud_filtered->height<<std::endl;
     
+    std::cerr<<"Pointcloud after filtering: "<<cloud_filtered->points.size()<<std::endl;
+   
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients());
     pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
-    pcl::PointIndices::Ptr indices_in  (new pcl::PointIndices ()); 
-    pcl::PointIndices indices_rem;
+
     //segmentation
-    //optional
     pcl::SACSegmentation<PointT> seg;
     // Optional
     seg.setOptimizeCoefficients (true);
     // Mandatory
     seg.setModelType (pcl::SACMODEL_PLANE);
     seg.setMethodType (pcl::SAC_RANSAC);
-    seg.setMaxIterations (1000);
-    seg.setDistanceThreshold (0.01);
+    //seg.setMaxIterations (1000);
+    seg.setDistanceThreshold (5);
 
-    pcl::PCDWriter writer;
+    //pcl::PLYWriter writer;
+
     //extract plane
     pcl::ExtractIndices<PointT> extract;
-    PointCloudT::Ptr cloud_filtered_backup=PointCloudT::Ptr(new PointCloudT);
-    for(int i=0;i<cloud_filtered->points.size();i++)
-        cloud_filtered_backup->points.push_back(cloud_filtered->points[i]);
+
     int i = 0, nr_points = (int) cloud_filtered->points.size ();
-  // While 30% of the original cloud is still there
+    // While 30% of the original cloud is still there
     while (cloud_filtered->points.size () > 0.3 * nr_points)
-    {
+    { 
         // Segment the largest planar component from the remaining cloud
         seg.setInputCloud (cloud_filtered);
         seg.segment (*inliers, *coefficients);
@@ -86,41 +80,16 @@ int MYREALSENSE::extract_target()
         extract.setNegative (false);
         extract.filter (*cloud_plane);
         std::cerr << "PointCloud representing the planar component: " << cloud_plane->width * cloud_plane->height << " data points." << std::endl;
-        for(int i=0;i<inliers->indices.size();++i)
-            indices_in->indices.push_back(inliers->indices[i]);
-        std::stringstream ss;
-        ss << "table_scene_lms400_plane_" << i << ".pcd";
-        writer.write<pcl::PointXYZ> (ss.str (), *cloud_plane, false);
-        view_pointcloud(cloud_plane);
         // Create the filtering object
         extract.setNegative (true);
         extract.filter (*cloud_f);
         cloud_filtered.swap (cloud_f);
         i++;
     }
-
     
-    pcl::ExtractIndices<PointT> eifilter (true); // Initializing with true will allow us to extract the removed indices
-	eifilter.setInputCloud (cloud_filtered_backup);
-	eifilter.setIndices (indices_in);
-    eifilter.filter(*cloud_plane);
-	eifilter.getRemovedIndices (indices_rem);
-	cout<<"the target pointcloud size: "<<' '<<indices_rem.indices.size()<<endl;
-	if(indices_rem.indices.size()!=0)
-	{
-		for (int i = 0; i < indices_rem.indices.size(); ++i)
-		{
-			target->points.push_back(cloud_filtered_backup->points.at(indices_rem.indices[i]));
-		}
-	}
-	else
-	{
-        cout<<"nothing"<<endl;
-		target=cloud_filtered;
-	}
-    view_pointcloud(cloud_filtered_backup);
-    view_pointcloud(target);
-    writer.write<pcl::PointXYZ> ("/home/yons/projects/realsense/res/target.pcd", *target, false);
+    view_pointcloud(cloud_plane);
+    view_pointcloud(cloud_filtered);
+    //writer.write<PointT> ("/home/yons/projects/realsense/res/target.pcd", *target, false);
 
   return (0);
 
@@ -141,7 +110,7 @@ float MYREALSENSE::get_depth_scale(rs2::device dev)
 
 Mat MYREALSENSE::align_Depth2Color()
 {
-    
+    cloud_realsense=PointCloudT::Ptr (new PointCloudT);
     auto depth_stream=profile.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>();
     auto color_stream=profile.get_stream(RS2_STREAM_COLOR).as<rs2::video_stream_profile>();
     const auto intrinDepth=depth_stream.get_intrinsics();
@@ -158,6 +127,7 @@ Mat MYREALSENSE::align_Depth2Color()
 
     result=Mat::zeros(dMat_color.rows,dMat_color.cols,CV_8UC3);
     int y=0,x=0;
+   
     for(int row=0;row<dMat_depth.rows;row++)
     {
         for(int col=0;col<dMat_depth.cols;col++)
@@ -186,9 +156,12 @@ Mat MYREALSENSE::align_Depth2Color()
         }
     }
      //显示 
-    extract_target();
+    cloud_realsense->height = 1;
+    cloud_realsense->width = cloud_realsense->points.size();
+    cloud_realsense->is_dense = false;
     //pcl::io::savePLYFileASCII("/home/yons/projects/realsense/res/pointcloud.ply", *cloud_realsense); 
-    //view_pointcloud(cloud_realsense);
+    extract_target();
+    
     return result;
 
 }
@@ -238,7 +211,7 @@ void MYREALSENSE::view_pointcloud(PointCloudT::Ptr cloud)
 	viewer = boost::shared_ptr<pcl::visualization::PCLVisualizer>(new pcl::visualization::PCLVisualizer(WindowName));
 	viewer->addPointCloud(cloud, WindowName);
 	viewer->resetCameraViewpoint(WindowName);
-	viewer->addCoordinateSystem(10);
+	viewer->addCoordinateSystem(5);
 	//viewer->setFullScreen(true); // Visualiser window size
 	viewer->setSize(screen_width,screen_height);
 	while (!viewer->wasStopped())

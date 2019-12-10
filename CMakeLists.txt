@@ -2,12 +2,13 @@ PROJECT(realsense)
 
 cmake_minimum_required(VERSION 3.5)
 
+set(CMAKE_BUILD_TYPE RELEASE CACHE STRING "set build type to release") 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 add_compile_options(-std=c++11)
 
 #Find PCL
 #########################################################
-find_package(PCL 1.2 REQUIRED COMPONENTS common io kdtree features visualization recognition segmentation sample_consensus)
+find_package(PCL 1.8 REQUIRED COMPONENTS common io kdtree features visualization recognition segmentation sample_consensus)
 
 if(PCL_FOUND)
 	message("PCL found")
