@@ -159,8 +159,9 @@ Mat MYREALSENSE::align_Depth2Color()
     cloud_realsense->height = 1;
     cloud_realsense->width = cloud_realsense->points.size();
     cloud_realsense->is_dense = false;
+    //view_pointcloud(cloud_realsense);
     //pcl::io::savePLYFileASCII("/home/yons/projects/realsense/res/pointcloud.ply", *cloud_realsense); 
-    extract_target();
+    //extract_target();
     
     return result;
 

@@ -55,6 +55,48 @@ void  FEATURE_EXTRACT::goodmatcher()
     goodmatch.clear();
 }
 
+void FEATURE_EXTRACT::sutura_detect(Mat skull_pic)
+{
+    Mat res,gray,filtered;
+    cvtColor(skull_pic,gray,COLOR_BGR2GRAY);
+    threshold(gray,res,25,255,THRESH_BINARY+THRESH_OTSU);
+    GaussianBlur(res,filtered,Size(3,3),0);
+    Canny(filtered,filtered,100,250);
+    vector<vector<Point>> contours;
+    vector<Vec4i> hierarchy;
+    Mat imageContours=Mat::zeros(skull_pic.size(),CV_8UC1);
+    Mat Contours=Mat::zeros(skull_pic.size(),CV_8UC1);
+    findContours(filtered,contours,hierarchy,CV_RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0));
+    vector<Point> biggestcontour;
+    for (int i = 0; i < contours.size(); i++)
+    {
+        //compute contour area
+        double area = contourArea(contours[i]);
+        
+        //remove contours whose area less than 1000
+        if (area < 300.0 || area>2000.0)
+            continue;
+        else
+        {
+            for(int j=0;j<contours[i].size();j++)
+            {
+                Point p=Point(contours[i][j].x,contours[i][j].y);
+                Contours.at<uchar>(p)=255;
+                cout<<"contour "<<i<<" area: "<<area<<endl;
+            }     
+        }
+        //char ch[256];  
+        //sprintf(ch,"%d",i);  
+        //string str=ch;  
+        //cout<<"向量hierarchy的第" <<str<<" 个元素内容为："<<endl<<hierarchy[i]<<endl<<endl;  
+        //绘制轮廓  
+        //drawContours(imageContours,contours,i,Scalar(255),1,8,hierarchy);  
+    }  
+    //imshow("gray",gray);
+    imshow("res",res);
+    //imshow("Contours Image",imageContours); //轮廓  
+    imshow("Point of Contours",Contours);   //向量contours内保存的所有轮廓点集  
+}
 
 void FEATURE_EXTRACT::printmatrix()
 {
