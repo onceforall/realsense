@@ -1,4 +1,5 @@
 #include "feature_extract.h"
+#include "my_realsense.hpp"
 
 using namespace cv;
 using namespace std;
@@ -6,6 +7,7 @@ FEATURE_EXTRACT::FEATURE_EXTRACT()
 {
     imgL=Mat(Size(pic_width,pic_height),CV_8UC3);
     imgR=Mat(Size(pic_width,pic_height),CV_8UC3);
+    cloud_sutura=PointCloudT::Ptr (new PointCloudT);
 }
  void FEATURE_EXTRACT::getdsp()
  {
@@ -65,9 +67,9 @@ void FEATURE_EXTRACT::sutura_detect(Mat skull_pic)
     vector<vector<Point>> contours;
     vector<Vec4i> hierarchy;
     Mat imageContours=Mat::zeros(skull_pic.size(),CV_8UC1);
-    Mat Contours=Mat::zeros(skull_pic.size(),CV_8UC1);
+    Contours=Mat::zeros(skull_pic.size(),CV_8UC1);
     findContours(filtered,contours,hierarchy,CV_RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0));
-    vector<Point> biggestcontour;
+    
     for (int i = 0; i < contours.size(); i++)
     {
         //compute contour area
@@ -82,6 +84,7 @@ void FEATURE_EXTRACT::sutura_detect(Mat skull_pic)
             {
                 Point p=Point(contours[i][j].x,contours[i][j].y);
                 Contours.at<uchar>(p)=255;
+                vec_sutura.push_back(Point(contours[i][j].x,contours[i][j].y));
                 cout<<"contour "<<i<<" area: "<<area<<endl;
             }     
         }
@@ -93,9 +96,9 @@ void FEATURE_EXTRACT::sutura_detect(Mat skull_pic)
         //drawContours(imageContours,contours,i,Scalar(255),1,8,hierarchy);  
     }  
     //imshow("gray",gray);
-    imshow("res",res);
+    //imshow("res",res);
     //imshow("Contours Image",imageContours); //轮廓  
-    imshow("Point of Contours",Contours);   //向量contours内保存的所有轮廓点集  
+    //imshow("Point of Contours",Contours);   //向量contours内保存的所有轮廓点集  
 }
 
 void FEATURE_EXTRACT::printmatrix()

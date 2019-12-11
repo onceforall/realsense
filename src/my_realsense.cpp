@@ -1,4 +1,5 @@
 #include "my_realsense.hpp"
+#include "feature_extract.h"
 #include <iostream>
 
 
@@ -148,6 +149,9 @@ Mat MYREALSENSE::align_Depth2Color()
             x=x>dMat_depth.cols-1?dMat_depth.cols-1:x;
             y=y<0?0:y;
             y=y>dMat_depth.rows-1?dMat_depth.rows-1:y;
+            if(find(feature_extract.vec_sutura.begin(),feature_extract.vec_sutura.end(),Point(x,y))!=feature_extract.vec_sutura.end())
+                feature_extract.cloud_sutura->points.push_back(PointT(Pdc3[0]*1000,Pdc3[1]*1000,Pdc3[2]*1000));
+            
             for(int k=0;k<3;k++)
             {
                 if(depth_in_meter<1)
@@ -155,11 +159,12 @@ Mat MYREALSENSE::align_Depth2Color()
             }
         }
     }
+    
      //显示 
     cloud_realsense->height = 1;
     cloud_realsense->width = cloud_realsense->points.size();
     cloud_realsense->is_dense = false;
-    //view_pointcloud(cloud_realsense);
+    view_pointcloud(cloud_realsense);
     //pcl::io::savePLYFileASCII("/home/yons/projects/realsense/res/pointcloud.ply", *cloud_realsense); 
     //extract_target();
     
@@ -206,20 +211,59 @@ catch (const std::exception & e)
 }
 
 
-
+#if 0
 void MYREALSENSE::view_pointcloud(PointCloudT::Ptr cloud)
 {
+    cout<<feature_extract.cloud_sutura->points.size()<<' '<<cloud->points.size()<<endl;
 	viewer = boost::shared_ptr<pcl::visualization::PCLVisualizer>(new pcl::visualization::PCLVisualizer(WindowName));
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> red(feature_extract.cloud_sutura, 255, 0, 0);
+    viewer->addPointCloud(feature_extract.cloud_sutura, red, WindowName);
 	viewer->addPointCloud(cloud, WindowName);
 	viewer->resetCameraViewpoint(WindowName);
-	viewer->addCoordinateSystem(5);
+	viewer->addCoordinateSystem(1);
+    viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, WindowName);
 	//viewer->setFullScreen(true); // Visualiser window size
 	viewer->setSize(screen_width,screen_height);
 	while (!viewer->wasStopped())
 	{
 		viewer->spin();
 		//boost::this_thread::sleep(boost::posix_time::microseconds(10));
-        viewer->close();
+        //viewer->close();
+	}
+}
+#endif
+
+void MYREALSENSE::view_pointcloud(PointCloudT::Ptr cloud)
+{
+	
+	viewer = boost::shared_ptr<pcl::visualization::PCLVisualizer>(new pcl::visualization::PCLVisualizer(WindowName)); //定义窗口共享指针
+	int v1 ; //定义两个窗口v1，v2，窗口v1用来显示初始位置，v2用以显示配准过程
+	int v2 ;
+	viewer->setSize(screen_width,screen_height);
+	viewer->resetCameraViewpoint(WindowName);
+	viewer->addCoordinateSystem(1);
+
+	viewer->createViewPort(0.0,0.0,0.5,1.0,v1);  //四个窗口参数分别对应x_min,y_min,x_max.y_max.
+	viewer->createViewPort(0.5,0.0,1.0,1.0,v2);
+
+	viewer->setBackgroundColor(0.0,0.05,0.05,v1); //设着两个窗口的背景色
+	viewer->setBackgroundColor(0.05,0.05,0.05,v2);
+
+	pcl::visualization::PointCloudColorHandlerCustom<PointT> sources_cloud_color(cloud,250,0,0); //设置源点云的颜色为红色
+	viewer->addPointCloud(cloud,sources_cloud_color,"The Whole PointCloud",v1);
+	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE,2,"The Whole PointCloud");  //设置显示点的大小
+	
+
+	pcl::visualization::PointCloudColorHandlerCustom<PointT>  res_cloud(feature_extract.cloud_sutura,0,255,0);  //设置配准结果为白色
+	viewer->addPointCloud(feature_extract.cloud_sutura,res_cloud,"Sutura Cloud",v2);
+	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE,2,"Sutura Cloud");
+
+	viewer->addText("The Whole PointCloud",200,30,18,0.9,0.9,0.9,"Before",v1);
+	viewer->addText("Sutura PointCloud",200,30,18,0.9,0.9,0.9,"After",v2);
+
+	while(!viewer->wasStopped())
+	{
+		viewer->spinOnce();  //运行视图
 	}
 }
 
@@ -227,7 +271,7 @@ void MYREALSENSE::view_pointcloud(PointCloudT::Ptr cloud)
 int MYREALSENSE::get_LR()
 try
 {
-    FEATURE_EXTRACT feature_extractor;
+    
     while (true)
     {
         rs2::frameset frames=pipe.wait_for_frames(30);
@@ -248,14 +292,14 @@ try
         cv::imwrite("/home/yons/projects/realsense/res/color.jpg",dMat_color);
         //cv::imwrite("/home/yons/projects/realsense/res/right.jpg",dMat_right);
         //feature_extractor.imgL=cv::imread("/home/yons/projects/realsense/res/left.jpg");
-        dMat_color.copyTo(feature_extractor.imgL);
-        feature_extractor.imgR=cv::imread("/home/yons/Documents/Wzx/before/preprocessed/2.jpg");
-        cv::resize(feature_extractor.imgR,feature_extractor.imgR,feature_extractor.imgL.size());
-        cout<<feature_extractor.imgL.size()<<' '<<feature_extractor.imgR.size()<<endl;
+        dMat_color.copyTo(feature_extract.imgL);
+        feature_extract.imgR=cv::imread("/home/yons/Documents/Wzx/before/preprocessed/2.jpg");
+        cv::resize(feature_extract.imgR,feature_extract.imgR,feature_extract.imgL.size());
+        cout<<feature_extract.imgL.size()<<' '<<feature_extract.imgR.size()<<endl;
         //feature_extractor.imgR=dMat_right;
-        feature_extractor.getdsp();
-        feature_extractor.goodmatcher();
-        feature_extractor.get_homography();
+        feature_extract.getdsp();
+        feature_extract.goodmatcher();
+        feature_extract.get_homography();
 		char c = cv::waitKey(30);
 
         //float width=depth.get_width();

@@ -7,6 +7,8 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <vector>
+#include "feature_extract.h"
 
 #include <librealsense2/rs.hpp>
 #include <librealsense2/rsutil.h>
@@ -27,7 +29,6 @@
 
 
 #include "example.hpp"
-#include "feature_extract.h"
 
 using namespace std;
 using namespace cv;
@@ -36,10 +37,13 @@ typedef pcl::PointXYZ PointT;
 typedef pcl::PointCloud<PointT> PointCloudT;
 
 
+
+
 class MYREALSENSE
 {
 public:
     /* data */
+    FEATURE_EXTRACT feature_extract;
     Mat dMat_left;
     Mat dMat_right;
     Mat dMat_depth;
@@ -68,6 +72,7 @@ public:
     void view_pointcloud(PointCloudT::Ptr cloud);
     int get_LR();
     int extract_target();
+    
 private:
     PointCloudT::Ptr cloud_realsense;
     PointCloudT::Ptr cloud_filtered;
@@ -77,13 +82,13 @@ private:
     pcl::PCLPointCloud2::Ptr cloud_blob;
     pcl::PCLPointCloud2::Ptr cloud_blob_filtered;
     PointCloudT::Ptr cloud_filtered_backup;
-
     boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
     const int screen_width=2560;
     const int screen_height=1080;
     const string WindowName="Realsense Output PointCloud";
     const int pic_width=640;
     const int pic_height=480;
+    
 };
 
 

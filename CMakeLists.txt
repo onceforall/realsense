@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.5)
 
 set(CMAKE_BUILD_TYPE RELEASE CACHE STRING "set build type to release") 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
+set(CMAKE_CXX_FLAGS -g)
 add_compile_options(-std=c++11)
 
 #Find PCL
