@@ -8,7 +8,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <vector>
-#include "feature_extract.h"
+#include "feature_extract.hpp"
 
 #include <librealsense2/rs.hpp>
 #include <librealsense2/rsutil.h>

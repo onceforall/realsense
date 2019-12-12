@@ -2,7 +2,7 @@
 #include <iostream>
 #include "opencv2/opencv.hpp"
 #include "opencv2/highgui.hpp"
-#include "opencv2/xfeatures2d.hpp"
+#include <opencv2/xfeatures2d.hpp>
 #include <pcl-1.8/pcl/io/pcd_io.h>
 #include <pcl-1.8/pcl/io/ply_io.h>
 #include <pcl-1.8/pcl/point_types.h>
@@ -40,7 +40,7 @@ private:
       vector<DMatch> goodmatch;
       Mat matchimg;
       Mat homo;
-      Mat Contours;
+      
       const int pic_width=640;
       const int pic_height=480;
 };

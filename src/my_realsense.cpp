@@ -1,5 +1,5 @@
 #include "my_realsense.hpp"
-#include "feature_extract.h"
+#include "feature_extract.hpp"
 #include <iostream>
 
 
@@ -112,6 +112,7 @@ float MYREALSENSE::get_depth_scale(rs2::device dev)
 Mat MYREALSENSE::align_Depth2Color()
 {
     cloud_realsense=PointCloudT::Ptr (new PointCloudT);
+    feature_extract.cloud_sutura=PointCloudT::Ptr (new PointCloudT);
     auto depth_stream=profile.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>();
     auto color_stream=profile.get_stream(RS2_STREAM_COLOR).as<rs2::video_stream_profile>();
     const auto intrinDepth=depth_stream.get_intrinsics();
@@ -161,6 +162,9 @@ Mat MYREALSENSE::align_Depth2Color()
     }
     
      //显示 
+    feature_extract.cloud_sutura->height = 1;
+    feature_extract.cloud_sutura->width = feature_extract.cloud_sutura->points.size();
+    feature_extract.cloud_sutura->is_dense = false;
     cloud_realsense->height = 1;
     cloud_realsense->width = cloud_realsense->points.size();
     cloud_realsense->is_dense = false;
@@ -211,17 +215,20 @@ catch (const std::exception & e)
 }
 
 
-#if 0
+
 void MYREALSENSE::view_pointcloud(PointCloudT::Ptr cloud)
 {
+    string suturaWindow="Sutura";
     cout<<feature_extract.cloud_sutura->points.size()<<' '<<cloud->points.size()<<endl;
 	viewer = boost::shared_ptr<pcl::visualization::PCLVisualizer>(new pcl::visualization::PCLVisualizer(WindowName));
     pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> red(feature_extract.cloud_sutura, 255, 0, 0);
-    viewer->addPointCloud(feature_extract.cloud_sutura, red, WindowName);
+    viewer->addPointCloud(feature_extract.cloud_sutura, red, suturaWindow);
 	viewer->addPointCloud(cloud, WindowName);
 	viewer->resetCameraViewpoint(WindowName);
+    viewer->resetCameraViewpoint(suturaWindow);
 	viewer->addCoordinateSystem(1);
-    viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, WindowName);
+    viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, WindowName);
+    viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 7, suturaWindow);
 	//viewer->setFullScreen(true); // Visualiser window size
 	viewer->setSize(screen_width,screen_height);
 	while (!viewer->wasStopped())
@@ -231,8 +238,8 @@ void MYREALSENSE::view_pointcloud(PointCloudT::Ptr cloud)
         //viewer->close();
 	}
 }
-#endif
 
+#if 0
 void MYREALSENSE::view_pointcloud(PointCloudT::Ptr cloud)
 {
 	
@@ -266,7 +273,7 @@ void MYREALSENSE::view_pointcloud(PointCloudT::Ptr cloud)
 		viewer->spinOnce();  //运行视图
 	}
 }
-
+#endif
 
 int MYREALSENSE::get_LR()
 try

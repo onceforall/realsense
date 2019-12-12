@@ -1,4 +1,4 @@
-#include "feature_extract.h"
+#include "feature_extract.hpp"
 #include "my_realsense.hpp"
 
 using namespace cv;
@@ -7,7 +7,7 @@ FEATURE_EXTRACT::FEATURE_EXTRACT()
 {
     imgL=Mat(Size(pic_width,pic_height),CV_8UC3);
     imgR=Mat(Size(pic_width,pic_height),CV_8UC3);
-    cloud_sutura=PointCloudT::Ptr (new PointCloudT);
+    
 }
  void FEATURE_EXTRACT::getdsp()
  {
@@ -57,18 +57,22 @@ void  FEATURE_EXTRACT::goodmatcher()
     goodmatch.clear();
 }
 
-void FEATURE_EXTRACT::sutura_detect(Mat skull_pic)
+Mat src,dst;
+Mat res,gray,filtered;
+
+int s1=0,s2=0,s3=3;
+void trackBar(int,void*)
 {
-    Mat res,gray,filtered;
-    cvtColor(skull_pic,gray,COLOR_BGR2GRAY);
-    threshold(gray,res,25,255,THRESH_BINARY+THRESH_OTSU);
-    GaussianBlur(res,filtered,Size(3,3),0);
-    Canny(filtered,filtered,100,250);
     vector<vector<Point>> contours;
     vector<Vec4i> hierarchy;
-    Mat imageContours=Mat::zeros(skull_pic.size(),CV_8UC1);
-    Contours=Mat::zeros(skull_pic.size(),CV_8UC1);
-    findContours(filtered,contours,hierarchy,CV_RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0));
+    Mat imageContours=Mat::zeros(Size(640,480),CV_8UC1);
+    Mat Contours=Mat::zeros(Size(640,480),CV_8UC1);
+    Canny(filtered,dst,s1,s2,3);
+    dilate(dst,dst,Mat(),Point(-1,-1),1);
+    erode(dst,dst,Mat(),Point(-1,-1),2);
+    if(s3%2!=1) s3+=1;
+    GaussianBlur(dst,dst,Size(s3,s3),0);
+    findContours(dst,contours,hierarchy,CV_RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0));
     
     for (int i = 0; i < contours.size(); i++)
     {
@@ -84,7 +88,67 @@ void FEATURE_EXTRACT::sutura_detect(Mat skull_pic)
             {
                 Point p=Point(contours[i][j].x,contours[i][j].y);
                 Contours.at<uchar>(p)=255;
-                vec_sutura.push_back(Point(contours[i][j].x,contours[i][j].y));
+                //vec_sutura.push_back(Point(contours[i][j].x,contours[i][j].y));
+                cout<<"contour "<<i<<" area: "<<area<<endl;
+            }     
+        }
+        //char ch[256];  
+        //sprintf(ch,"%d",i);  
+        //string str=ch;  
+        //cout<<"向量hierarchy的第" <<str<<" 个元素内容为："<<endl<<hierarchy[i]<<endl<<endl;  
+        //绘制轮廓  
+        drawContours(imageContours,contours,i,Scalar(255),1,8,hierarchy);  
+    }  
+    //imshow("gray",gray);
+    //imshow("res",res);
+    imshow("output", dst);
+    imshow("Contours Image",imageContours); //轮廓  
+    imshow("Point of Contours",Contours);   //向量contours内保存的所有轮廓点集  
+}
+
+void FEATURE_EXTRACT::sutura_detect(Mat skull_pic)
+{
+    if(skull_pic.empty())
+    {
+        printf("can not load image \n");
+        return;
+    }
+    cvtColor(skull_pic,gray,COLOR_BGR2GRAY);
+    threshold(gray,res,25,255,THRESH_BINARY+THRESH_OTSU);
+    GaussianBlur(res,filtered,Size(s3,s3),0);
+ 
+    cvNamedWindow("input",CV_WINDOW_AUTOSIZE);
+    imshow("input",skull_pic);
+
+    cvNamedWindow("output",CV_WINDOW_AUTOSIZE);
+    createTrackbar("canny1","output",&s1,255,trackBar);
+    createTrackbar("canny2", "output", &s2, 255, trackBar);
+    createTrackbar("gauss","output",&s3,9,trackBar);
+    //GaussianBlur(src,src,Size(3,3),0);
+    waitKey(30);
+
+    #if 0
+    vector<vector<Point>> contours;
+    vector<Vec4i> hierarchy;
+    Mat imageContours=Mat::zeros(Size(640,480),CV_8UC1);
+    Mat Contours=Mat::zeros(Size(640,480),CV_8UC1);
+    findContours(dst,contours,hierarchy,CV_RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0));
+    
+    for (int i = 0; i < contours.size(); i++)
+    {
+        //compute contour area
+        double area = contourArea(contours[i]);
+        
+        //remove contours whose area less than 1000
+        if (area < 300.0 || area>2000.0)
+            continue;
+        else
+        {
+            for(int j=0;j<contours[i].size();j++)
+            {
+                Point p=Point(contours[i][j].x,contours[i][j].y);
+                Contours.at<uchar>(p)=255;
+                //vec_sutura.push_back(Point(contours[i][j].x,contours[i][j].y));
                 cout<<"contour "<<i<<" area: "<<area<<endl;
             }     
         }
@@ -97,8 +161,9 @@ void FEATURE_EXTRACT::sutura_detect(Mat skull_pic)
     }  
     //imshow("gray",gray);
     //imshow("res",res);
-    //imshow("Contours Image",imageContours); //轮廓  
-    //imshow("Point of Contours",Contours);   //向量contours内保存的所有轮廓点集  
+    imshow("Contours Image",imageContours); //轮廓  
+    imshow("Point of Contours",Contours);   //向量contours内保存的所有轮廓点集  
+    #endif 
 }
 
 void FEATURE_EXTRACT::printmatrix()
