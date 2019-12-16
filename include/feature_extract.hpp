@@ -27,6 +27,7 @@ public:
       void get_homography();
       void printmatrix();
       void sutura_detect(Mat skull_pic);
+      void get_mask();
       Mat imgL;
       Mat imgR;
       PointCloudT::Ptr cloud_sutura;

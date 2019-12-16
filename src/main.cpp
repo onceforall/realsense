@@ -3,6 +3,7 @@
 #include "pointcloud.hpp"
 #include "my_realsense.hpp"
 
+
 int main()
 {
     int num=0;
@@ -42,13 +43,17 @@ int main()
                                 CV_8UC3,(void*)color_frame.get_data(),Mat::AUTO_STEP);
         //实现深度图对齐到彩色图
         
-        //imshow(firstone.depth_win,firstone.depth_color);
+        imshow(firstone.depth_win,firstone.depth_color);
         imshow(firstone.color_win,firstone.dMat_color);
         //imshow("result",firstone.result);
         //imwrite("/home/yons/projects/realsense/res/depth.JPG",firstone.depth_color);
         //imwrite("/home/yons/projects/realsense/res/color.jpg",firstone.dMat_color);
         //firstone.feature_extract.sutura_detect(firstone.dMat_color);
-        //firstone.result=firstone.align_Depth2Color();
+        //firstone.feature_extract.get_mask();
+        firstone.result=firstone.align_Depth2Color();
+
+        waitKey(10);
+        #if 0
         char key_board=waitKey(10);
         if(key_board=='s' || key_board=='S')
         {
@@ -63,6 +68,7 @@ int main()
             cout<<"Quiting ..."<<endl;
             return 0;
         }
+        #endif 
     }
     return 0;
 }

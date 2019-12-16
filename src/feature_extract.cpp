@@ -106,6 +106,32 @@ void trackBar(int,void*)
     imshow("Point of Contours",Contours);   //向量contours内保存的所有轮廓点集  
 }
 
+void FEATURE_EXTRACT::get_mask()
+{
+    Mat mask_pic=imread("/home/yons/projects/pycharms/Mask_RCNN/Out_Mask/31.jpg",0);
+   
+    if(mask_pic.empty())
+    {
+        printf("can't load image \n");
+        return;
+    }
+    int rowNumber = mask_pic.rows;    //行数
+	int colNumber = mask_pic.cols*mask_pic.channels();   //列数*通道数=每一行元素的个数
+ 
+	for(int i = 0; i < rowNumber; i++)  //行循环，可根据需要换成rowNumber
+	{
+		uchar* data = mask_pic.ptr<uchar>(i);  //获取第i行的首地址
+		for(int j = 0; j < colNumber; j++)  //列循环，同理
+		{
+			int intensity = data[j];
+            if(intensity==100)
+            { 
+                vec_sutura.push_back(Point(i,j));
+            }
+		}
+	}
+    cout<<"index done"<<endl;
+}
 void FEATURE_EXTRACT::sutura_detect(Mat skull_pic)
 {
     if(skull_pic.empty())

@@ -111,6 +111,16 @@ float MYREALSENSE::get_depth_scale(rs2::device dev)
 
 Mat MYREALSENSE::align_Depth2Color()
 {
+    Mat mask_pic=imread("/home/yons/projects/pycharms/Mask_RCNN/Out_Mask/31.jpg",0);
+   
+    if(mask_pic.empty())
+    {
+        printf("can't load image \n");
+        
+    }
+    int rowNumber = mask_pic.rows;    //行数
+	int colNumber = mask_pic.cols*mask_pic.channels();   //列数*通道数=每一行元素的个数
+
     cloud_realsense=PointCloudT::Ptr (new PointCloudT);
     feature_extract.cloud_sutura=PointCloudT::Ptr (new PointCloudT);
     auto depth_stream=profile.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>();
@@ -119,9 +129,11 @@ Mat MYREALSENSE::align_Depth2Color()
     const auto intrinColor=color_stream.get_intrinsics();
 
     rs2_extrinsics extrinDepth2Color;
+    //rs2_extrinsics extrinColor2Depth;
     rs2_error *error;
+    //rs2_error *error_c2d;
     rs2_get_extrinsics(depth_stream,color_stream,&extrinDepth2Color,&error);
-
+    //rs2_get_extrinsics(color_stream,depth_stream,&extrinColor2Depth,&error_c2d);
     float pd_uv[2],pc_uv[2];
     float Pdc3[3],Pcc3[3];
 
@@ -129,7 +141,7 @@ Mat MYREALSENSE::align_Depth2Color()
 
     result=Mat::zeros(dMat_color.rows,dMat_color.cols,CV_8UC3);
     int y=0,x=0;
-   
+    
     for(int row=0;row<dMat_depth.rows;row++)
     {
         for(int col=0;col<dMat_depth.cols;col++)
@@ -150,7 +162,11 @@ Mat MYREALSENSE::align_Depth2Color()
             x=x>dMat_depth.cols-1?dMat_depth.cols-1:x;
             y=y<0?0:y;
             y=y>dMat_depth.rows-1?dMat_depth.rows-1:y;
-            if(find(feature_extract.vec_sutura.begin(),feature_extract.vec_sutura.end(),Point(x,y))!=feature_extract.vec_sutura.end())
+            
+            //if(find(feature_extract.vec_sutura.begin(),feature_extract.vec_sutura.end(),Point(x,y))!=feature_extract.vec_sutura.end())
+            uchar* data = mask_pic.ptr<uchar>(y);
+            int intensity=data[x];
+            if(intensity==100)
                 feature_extract.cloud_sutura->points.push_back(PointT(Pdc3[0]*1000,Pdc3[1]*1000,Pdc3[2]*1000));
             
             for(int k=0;k<3;k++)
@@ -160,6 +176,7 @@ Mat MYREALSENSE::align_Depth2Color()
             }
         }
     }
+
     
      //显示 
     feature_extract.cloud_sutura->height = 1;
