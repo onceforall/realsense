@@ -59,7 +59,8 @@ public:
     int depth_h=480;
     int color_w=640;
     int color_h=480;
- 
+    
+    vector<vector<float>> vec_depth;
     const float depth_clipping_distance=1.f;
     rs2::pipeline_profile profile;
     rs2::pipeline pipe;
@@ -67,12 +68,14 @@ public:
     MYREALSENSE(/* args */);
     ~MYREALSENSE();
     float get_depth_scale(rs2::device dev);
-    Mat align_Depth2Color();
+    Mat align_Depth2Color(string mask_path);
     int get_pointcloud();
-    void view_pointcloud(PointCloudT::Ptr cloud);
+    void view_pointcloud(PointCloudT::Ptr cloud);  
     int get_LR();
     int extract_target();
-    
+    void align_Depth2Color();
+    void view_pointcloud();
+    void readMatrixfromTXT(string fileName, const int numRow,const int numColumn,  Mat* matrix);
 private:
     PointCloudT::Ptr cloud_realsense;
     PointCloudT::Ptr cloud_filtered;
@@ -88,7 +91,6 @@ private:
     const string WindowName="Realsense Output PointCloud";
     const int pic_width=640;
     const int pic_height=480;
-    
 };
 
 

@@ -26,6 +26,7 @@ MYREALSENSE::MYREALSENSE(/* args */)
     cloud_blob=pcl::PCLPointCloud2::Ptr(new pcl::PCLPointCloud2);
     cloud_blob_filtered=pcl::PCLPointCloud2::Ptr(new pcl::PCLPointCloud2);
     cloud_filtered_backup=PointCloudT::Ptr(new PointCloudT);
+    vec_depth= vector<vector<float>>(pic_height,vector<float>(pic_width,0));
 }
 
 MYREALSENSE::~MYREALSENSE()
@@ -93,7 +94,6 @@ int MYREALSENSE::extract_target()
     //writer.write<PointT> ("/home/yons/projects/realsense/res/target.pcd", *target, false);
 
   return (0);
-
 }
 
 float MYREALSENSE::get_depth_scale(rs2::device dev)
@@ -109,20 +109,11 @@ float MYREALSENSE::get_depth_scale(rs2::device dev)
 }
 
 
-Mat MYREALSENSE::align_Depth2Color()
-{
-    Mat mask_pic=imread("/home/yons/projects/pycharms/Mask_RCNN/Out_Mask/31.jpg",0);
-   
-    if(mask_pic.empty())
-    {
-        printf("can't load image \n");
-        
-    }
-    int rowNumber = mask_pic.rows;    //行数
-	int colNumber = mask_pic.cols*mask_pic.channels();   //列数*通道数=每一行元素的个数
 
+void MYREALSENSE::align_Depth2Color()
+{
     cloud_realsense=PointCloudT::Ptr (new PointCloudT);
-    feature_extract.cloud_sutura=PointCloudT::Ptr (new PointCloudT);
+   
     auto depth_stream=profile.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>();
     auto color_stream=profile.get_stream(RS2_STREAM_COLOR).as<rs2::video_stream_profile>();
     const auto intrinDepth=depth_stream.get_intrinsics();
@@ -138,10 +129,9 @@ Mat MYREALSENSE::align_Depth2Color()
     float Pdc3[3],Pcc3[3];
 
     float depth_scale=get_depth_scale(profile.get_device());
-
-    result=Mat::zeros(dMat_color.rows,dMat_color.cols,CV_8UC3);
+    //result=Mat::zeros(dMat_color.rows,dMat_color.cols,CV_8UC3);
     int y=0,x=0;
-    
+   
     for(int row=0;row<dMat_depth.rows;row++)
     {
         for(int col=0;col<dMat_depth.cols;col++)
@@ -149,6 +139,7 @@ Mat MYREALSENSE::align_Depth2Color()
             pd_uv[0]=col;
             pd_uv[1]=row;
             uint16_t depth_value=dMat_depth.at<uint16_t>(row,col);
+           
             float depth_in_meter=depth_value*depth_scale;
             rs2_deproject_pixel_to_point(Pdc3,&intrinDepth,pd_uv,depth_in_meter);
             rs2_transform_point_to_point(Pcc3,&extrinDepth2Color,Pdc3);
@@ -163,36 +154,139 @@ Mat MYREALSENSE::align_Depth2Color()
             y=y<0?0:y;
             y=y>dMat_depth.rows-1?dMat_depth.rows-1:y;
             
-            //if(find(feature_extract.vec_sutura.begin(),feature_extract.vec_sutura.end(),Point(x,y))!=feature_extract.vec_sutura.end())
-            uchar* data = mask_pic.ptr<uchar>(y);
-            int intensity=data[x];
-            if(intensity==100)
-                feature_extract.cloud_sutura->points.push_back(PointT(Pdc3[0]*1000,Pdc3[1]*1000,Pdc3[2]*1000));
-            
+            #if 0
             for(int k=0;k<3;k++)
             {
                 if(depth_in_meter<1)
                     result.at<cv::Vec3b>(y,x)[k]=dMat_color.at<cv::Vec3b>(y,x)[k];
             }
+            #endif
+        }
+    } 
+    view_pointcloud();
+    return;
+}
+
+
+Mat MYREALSENSE::align_Depth2Color(string mask_path)
+{
+    Mat mask_pic=imread(mask_path,0);
+    if(mask_pic.empty())
+    {
+        printf("can't load image \n");
+    }
+    int rowNumber = mask_pic.rows;    //行数
+	int colNumber = mask_pic.cols*mask_pic.channels();   //列数*通道数=每一行元素的个数
+
+    cloud_realsense=PointCloudT::Ptr (new PointCloudT);
+    feature_extract.cloud_sutura=PointCloudT::Ptr (new PointCloudT);
+    auto depth_stream=profile.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>();
+    auto color_stream=profile.get_stream(RS2_STREAM_COLOR).as<rs2::video_stream_profile>();
+    const auto intrinDepth=depth_stream.get_intrinsics();
+    const auto intrinColor=color_stream.get_intrinsics();
+
+    rs2_extrinsics extrinDepth2Color;
+    rs2_error *error;
+    rs2_get_extrinsics(depth_stream,color_stream,&extrinDepth2Color,&error);
+    
+    float pd_uv[2],pc_uv[2];
+    float Pdc3[3],Pcc3[3];
+    float depth_scale=get_depth_scale(profile.get_device());
+    int y=0,x=0;
+
+    result=Mat::zeros(pic_height,pic_width,CV_8UC3);
+    
+    Mat *Mat_depth=new Mat(Size(pic_width,pic_height),
+                                CV_16UC1);
+    readMatrixfromTXT("/home/yons/projects/realsense/res/depth.txt",pic_height,pic_width,Mat_depth);
+    if(Mat_depth->empty())
+    {
+        printf("depth frame can't load \n");
+        return result;
+    }
+    
+    for(int row=0;row<Mat_depth->rows;row++)
+    {
+        for(int col=0;col<Mat_depth->cols;col++)
+        {
+            pd_uv[0]=col;
+            pd_uv[1]=row;
+            uint16_t depth_value=Mat_depth->at<uint16_t>(row,col);  //type is so important,the read type must be the same as the read type
+            
+            float depth_in_meter=depth_value*depth_scale;
+            
+            rs2_deproject_pixel_to_point(Pdc3,&intrinDepth,pd_uv,depth_in_meter);
+            rs2_transform_point_to_point(Pcc3,&extrinDepth2Color,Pdc3);
+            rs2_project_point_to_pixel(pc_uv,&intrinColor,Pcc3);
+            cloud_realsense->points.push_back(PointT(Pdc3[0]*1000,Pdc3[1]*1000,Pdc3[2]*1000));
+            x=(int)pc_uv[0];
+            y=(int)pc_uv[1];
+
+            x=x<0?0:x;
+            x=x>Mat_depth->cols-1?Mat_depth->cols-1:x;
+            y=y<0?0:y;
+            y=y>Mat_depth->rows-1?Mat_depth->rows-1:y;
+            
+            uchar* data = mask_pic.ptr<uchar>(y);
+            int intensity=data[x];
+            if(intensity==100)
+                feature_extract.cloud_sutura->points.push_back(PointT(Pdc3[0]*1000,Pdc3[1]*1000,Pdc3[2]*1000));
+
+            for(int k=0;k<3;k++)
+            {
+                if(depth_in_meter<1)
+                    result.at<cv::Vec3b>(y,x)[k]=dMat_color.at<cv::Vec3b>(y,x)[k];
+            }       
         }
     }
-
-    
      //显示 
-    feature_extract.cloud_sutura->height = 1;
-    feature_extract.cloud_sutura->width = feature_extract.cloud_sutura->points.size();
-    feature_extract.cloud_sutura->is_dense = false;
     cloud_realsense->height = 1;
     cloud_realsense->width = cloud_realsense->points.size();
     cloud_realsense->is_dense = false;
+    feature_extract.cloud_sutura->height = 1;
+    feature_extract.cloud_sutura->width = feature_extract.cloud_sutura->points.size();
+    feature_extract.cloud_sutura->is_dense = false;
     view_pointcloud(cloud_realsense);
+    
     //pcl::io::savePLYFileASCII("/home/yons/projects/realsense/res/pointcloud.ply", *cloud_realsense); 
     //extract_target();
-    
     return result;
-
 }
 
+
+void MYREALSENSE::readMatrixfromTXT(string fileName, const int numRow,const int numColumn,  Mat* matrix)
+{
+	// std::ifstream fin(fileName,std::ifstream::in);
+	ifstream fin(fileName, ios::in);
+	// ifstream fin(fileName.c_str(),ios::in);
+	if (!fin)
+	{
+		std::cout<<fileName<<std::endl;
+		cerr << "不能打开文件" << endl;
+		exit(1);
+	}
+	string line;
+	float tmp;
+	//int j = 0;
+	for (int i = 0; i<numRow; i++)
+	{
+		getline(fin, line);
+		//j = 0;
+		//for(int j=0;j<numColumn;j++){
+		istringstream istr(line);
+		uint16_t* pdata=(uint16_t *)(matrix->data+i*matrix->step); //type is so important
+		while (istr >> tmp)
+		{    
+			*pdata= tmp;
+			pdata++;
+			//++j;
+		}
+		istr.clear();
+		line.clear();
+	}
+	
+	fin.close();
+}
 int MYREALSENSE::get_pointcloud()
 try
 {
@@ -232,6 +326,21 @@ catch (const std::exception & e)
 }
 
 
+void MYREALSENSE::view_pointcloud()
+{
+	viewer = boost::shared_ptr<pcl::visualization::PCLVisualizer>(new pcl::visualization::PCLVisualizer(WindowName));
+	viewer->addPointCloud(cloud_realsense, WindowName);
+	viewer->resetCameraViewpoint(WindowName);
+	viewer->addCoordinateSystem(10);
+	//viewer->setFullScreen(true); // Visualiser window size
+	viewer->setSize(screen_width,screen_height);
+	while (!viewer->wasStopped())
+	{
+		viewer->spinOnce();
+		//boost::this_thread::sleep(boost::posix_time::microseconds(100000));
+	}
+}
+
 
 void MYREALSENSE::view_pointcloud(PointCloudT::Ptr cloud)
 {
@@ -256,41 +365,6 @@ void MYREALSENSE::view_pointcloud(PointCloudT::Ptr cloud)
 	}
 }
 
-#if 0
-void MYREALSENSE::view_pointcloud(PointCloudT::Ptr cloud)
-{
-	
-	viewer = boost::shared_ptr<pcl::visualization::PCLVisualizer>(new pcl::visualization::PCLVisualizer(WindowName)); //定义窗口共享指针
-	int v1 ; //定义两个窗口v1，v2，窗口v1用来显示初始位置，v2用以显示配准过程
-	int v2 ;
-	viewer->setSize(screen_width,screen_height);
-	viewer->resetCameraViewpoint(WindowName);
-	viewer->addCoordinateSystem(1);
-
-	viewer->createViewPort(0.0,0.0,0.5,1.0,v1);  //四个窗口参数分别对应x_min,y_min,x_max.y_max.
-	viewer->createViewPort(0.5,0.0,1.0,1.0,v2);
-
-	viewer->setBackgroundColor(0.0,0.05,0.05,v1); //设着两个窗口的背景色
-	viewer->setBackgroundColor(0.05,0.05,0.05,v2);
-
-	pcl::visualization::PointCloudColorHandlerCustom<PointT> sources_cloud_color(cloud,250,0,0); //设置源点云的颜色为红色
-	viewer->addPointCloud(cloud,sources_cloud_color,"The Whole PointCloud",v1);
-	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE,2,"The Whole PointCloud");  //设置显示点的大小
-	
-
-	pcl::visualization::PointCloudColorHandlerCustom<PointT>  res_cloud(feature_extract.cloud_sutura,0,255,0);  //设置配准结果为白色
-	viewer->addPointCloud(feature_extract.cloud_sutura,res_cloud,"Sutura Cloud",v2);
-	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE,2,"Sutura Cloud");
-
-	viewer->addText("The Whole PointCloud",200,30,18,0.9,0.9,0.9,"Before",v1);
-	viewer->addText("Sutura PointCloud",200,30,18,0.9,0.9,0.9,"After",v2);
-
-	while(!viewer->wasStopped())
-	{
-		viewer->spinOnce();  //运行视图
-	}
-}
-#endif
 
 int MYREALSENSE::get_LR()
 try
