@@ -42,6 +42,14 @@ int main()
     //std::stringstream csv_file;
     //png_file << "/home/yons/projects/realsense/res/depth" << ".png";
     //csv_file << "/home/yons/projects/realsense/res/depth"<< "-metadata.csv";
+    //PointCloudT::Ptr cloud=PointCloudT::Ptr(new PointCloudT);
+    //PointCloudT::Ptr part=PointCloudT::Ptr(new PointCloudT);
+    //string inputcloudfile="/home/yons/projects/realsense/res/pointcloud.ply";
+    //string partcloudfile="/home/yons/projects/realsense/res/part.ply";
+    //pcl::io::loadPLYFile(inputcloudfile, *cloud);
+    //pcl::io::loadPLYFile(partcloudfile,*part);
+    //firstone.feature_extract.cloud_sutura=part;
+    //firstone.view_pointcloud(cloud);
     firstone.result=firstone.align_Depth2Color(mask_path);
     return 0;
     std::ofstream outfile("/home/yons/projects/realsense/res/depth.txt");
@@ -107,15 +115,16 @@ int main()
         }
         outfile.close();
         
-        imshow(firstone.depth_win,firstone.depth_color);
-        imshow(firstone.color_win,firstone.dMat_color);
+        
         
         //imwrite("/home/yons/projects/realsense/res/depth.png",firstone.dMat_depth);
         imwrite("/home/yons/projects/realsense/res/color.png",firstone.dMat_color);
         //firstone.feature_extract.sutura_detect(firstone.dMat_color);
         //firstone.feature_extract.get_mask();
-        firstone.align_Depth2Color();
-        //outfile.close();
+        //firstone.align_Depth2Color();
+       
+        imshow(firstone.depth_win,firstone.depth_color);
+        imshow(firstone.color_win,firstone.dMat_color);
         waitKey(10);
         
         #if 0

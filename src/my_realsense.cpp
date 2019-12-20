@@ -246,9 +246,9 @@ Mat MYREALSENSE::align_Depth2Color(string mask_path)
     feature_extract.cloud_sutura->height = 1;
     feature_extract.cloud_sutura->width = feature_extract.cloud_sutura->points.size();
     feature_extract.cloud_sutura->is_dense = false;
+    pcl::io::savePLYFileASCII("/home/yons/projects/realsense/res/pointcloud.ply", *cloud_realsense); 
+    pcl::io::savePLYFileASCII("/home/yons/projects/realsense/res/part.ply", *feature_extract.cloud_sutura);
     view_pointcloud(cloud_realsense);
-    
-    //pcl::io::savePLYFileASCII("/home/yons/projects/realsense/res/pointcloud.ply", *cloud_realsense); 
     //extract_target();
     return result;
 }

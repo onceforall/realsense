@@ -55,7 +55,7 @@ endif()
 find_package(glfw3 REQUIRED)
 
 
-include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/third-party)
 
 add_executable(realsense src/feature_extract.cpp src/get_depth.cpp src/pointcloud.cpp src/example.cpp src/my_realsense.cpp src/main.cpp )
 
