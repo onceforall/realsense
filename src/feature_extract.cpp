@@ -106,15 +106,15 @@ void trackBar(int,void*)
     imshow("Point of Contours",Contours);   //向量contours内保存的所有轮廓点集  
 }
 
-void FEATURE_EXTRACT::get_mask()
+void FEATURE_EXTRACT::get_mask(Mat mask_pic)
 {
-    Mat mask_pic=imread("/home/yons/projects/pycharms/Mask_RCNN/Out_Mask/31.jpg",0);
-   
+    vector<vector<Point2i>> Ctour;
     if(mask_pic.empty())
     {
         printf("can't load image \n");
         return;
     }
+    Mat pic_contour=Mat::zeros(Size(mask_pic.cols,mask_pic.rows),CV_8UC1);
     int rowNumber = mask_pic.rows;    //行数
 	int colNumber = mask_pic.cols*mask_pic.channels();   //列数*通道数=每一行元素的个数
  
@@ -126,12 +126,27 @@ void FEATURE_EXTRACT::get_mask()
 			int intensity = data[j];
             if(intensity==100)
             { 
+                vector<Point> pointse;
                 vec_sutura.push_back(Point(i,j));
+                if(j>=1 && j<colNumber-1 && data[j-1]<100 && data[j+1]==100)
+                    pointse.push_back(Point(i,j));
+                if(j>=1 && j<colNumber-1 && data[j-1]==100 && data[j+1]<100)
+                    pointse.push_back(Point(i,j));
+                if(pointse.size()>0)
+                    Ctour.push_back(pointse);
             }
 		}
 	}
     cout<<"index done"<<endl;
+    for(auto end:Ctour)
+    {
+        for(int i=0;i<end.size();i++)
+            pic_contour.at<uchar>(end[i].x,end[i].y)=100;
+    }
+    imshow("contours",pic_contour);
+    waitKey(0);
 }
+
 void FEATURE_EXTRACT::sutura_detect(Mat skull_pic)
 {
     if(skull_pic.empty())
@@ -139,8 +154,14 @@ void FEATURE_EXTRACT::sutura_detect(Mat skull_pic)
         printf("can not load image \n");
         return;
     }
-    cvtColor(skull_pic,gray,COLOR_BGR2GRAY);
-    threshold(gray,res,25,255,THRESH_BINARY+THRESH_OTSU);
+    if(skull_pic.channels()==3)
+        cvtColor(skull_pic,gray,COLOR_BGR2GRAY);
+    else
+    {
+        gray=skull_pic.clone();
+    }
+    
+    threshold(gray,res,100,255,THRESH_BINARY+THRESH_OTSU);
     GaussianBlur(res,filtered,Size(s3,s3),0);
  
     cvNamedWindow("input",CV_WINDOW_AUTOSIZE);
@@ -151,7 +172,7 @@ void FEATURE_EXTRACT::sutura_detect(Mat skull_pic)
     createTrackbar("canny2", "output", &s2, 255, trackBar);
     createTrackbar("gauss","output",&s3,9,trackBar);
     //GaussianBlur(src,src,Size(3,3),0);
-    waitKey(30);
+    waitKey(0);
 
     #if 0
     vector<vector<Point>> contours;

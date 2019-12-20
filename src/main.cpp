@@ -32,6 +32,10 @@ int main()
 {
     int num=0;
     MYREALSENSE firstone;
+    string test_path="/home/yons/projects/pycharms/Mask_RCNN/Out_Mask/color.png";
+    Mat test=imread(test_path,0);
+    firstone.feature_extract.get_mask(test);
+    return 0;
     //firstone.get_LR();
     rs2::colorizer c; 
     namedWindow(firstone.depth_win,WINDOW_AUTOSIZE);
