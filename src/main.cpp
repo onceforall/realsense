@@ -35,6 +35,7 @@ int main()
     string test_path="/home/yons/projects/pycharms/Mask_RCNN/Out_Mask/color.png";
     Mat test=imread(test_path,0);
     firstone.feature_extract.get_mask(test);
+    //firstone.feature_extract.sutura_detect(test);
     return 0;
     //firstone.get_LR();
     rs2::colorizer c; 

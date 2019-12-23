@@ -108,47 +108,79 @@ void trackBar(int,void*)
 
 void FEATURE_EXTRACT::get_mask(Mat mask_pic)
 {
+    int dx[]={-1,0,1},dy[]={-1,0,1};
     vector<vector<Point2i>> Ctour;
+    Mat binary;
     if(mask_pic.empty())
     {
-        printf("can't load image \n");
+        printf("can not load image \n");
         return;
     }
+    if(mask_pic.channels()==3)
+        cvtColor(mask_pic,gray,COLOR_BGR2GRAY);
+    else
+    {
+        gray=mask_pic.clone();
+    }
+    
+    threshold(gray,binary,0,255,THRESH_BINARY+THRESH_OTSU);
+    //GaussianBlur(binary,binary,Size(s3,s3),0);
+
+    //closure operation
+    Mat morphImage;
+    Mat kernel = getStructuringElement(MORPH_RECT, Size(3, 3), Point(-1, -1));
+    morphologyEx(binary, morphImage, MORPH_CLOSE, kernel, Point(-1, -1), 2);
+    
     Mat pic_contour=Mat::zeros(Size(mask_pic.cols,mask_pic.rows),CV_8UC1);
     int rowNumber = mask_pic.rows;    //行数
 	int colNumber = mask_pic.cols*mask_pic.channels();   //列数*通道数=每一行元素的个数
  
-	for(int i = 0; i < rowNumber; i++)  //行循环，可根据需要换成rowNumber
+	for(int row = 0; row < rowNumber; row++)  //行循环，可根据需要换成rowNumber
 	{
-		uchar* data = mask_pic.ptr<uchar>(i);  //获取第i行的首地址
-		for(int j = 0; j < colNumber; j++)  //列循环，同理
+        vector<Point> pointse;
+		//uchar* data = morphImage.ptr<uchar>(row);  //获取第i行的首地址
+		for(int col = 0; col < colNumber; col++)  //列循环，同理
 		{
-			int intensity = data[j];
-            if(intensity==100)
-            { 
-                vector<Point> pointse;
-                vec_sutura.push_back(Point(i,j));
-                if(j>=1 && j<colNumber-1 && data[j-1]<100 && data[j+1]==100)
-                    pointse.push_back(Point(i,j));
-                if(j>=1 && j<colNumber-1 && data[j-1]==100 && data[j+1]<100)
-                    pointse.push_back(Point(i,j));
-                if(pointse.size()>0)
-                    Ctour.push_back(pointse);
-            }
+			//int intensity = data[col];
+            if(morphImage.at<uchar>(row,col))
+            {
+                for(int i=0;i<3;i++)
+                {
+                    int x=row+dx[i];
+                    for(int j=0;j<3;j++)
+                    {
+                        int y=col+dy[j];
+                        if(x>=0 && x<rowNumber && y>=0 && y<colNumber)
+                        {
+                            //uchar* curdata=morphImage.ptr<uchar>(x);
+                            //if(curdata[y]==0)
+                            if(morphImage.at<uchar>(x,y)==0)
+                            {
+                                pointse.push_back(Point(row,col));
+                                break;
+                            } 
+                        }
+                    }
+                }         
+            } 
 		}
+        if(pointse.size()>0)
+            Ctour.push_back(pointse);
 	}
     cout<<"index done"<<endl;
     for(auto end:Ctour)
     {
         for(int i=0;i<end.size();i++)
-            pic_contour.at<uchar>(end[i].x,end[i].y)=100;
+            pic_contour.at<uchar>(end[i].x,end[i].y)=255;
     }
+    
     imshow("contours",pic_contour);
     waitKey(0);
 }
 
 void FEATURE_EXTRACT::sutura_detect(Mat skull_pic)
 {
+    Mat binary;
     if(skull_pic.empty())
     {
         printf("can not load image \n");
@@ -161,56 +193,56 @@ void FEATURE_EXTRACT::sutura_detect(Mat skull_pic)
         gray=skull_pic.clone();
     }
     
-    threshold(gray,res,100,255,THRESH_BINARY+THRESH_OTSU);
-    GaussianBlur(res,filtered,Size(s3,s3),0);
+    threshold(gray,binary,0,255,THRESH_BINARY+THRESH_OTSU);
+    //GaussianBlur(binary,filtered,Size(s3,s3),0);
  
     cvNamedWindow("input",CV_WINDOW_AUTOSIZE);
     imshow("input",skull_pic);
 
     cvNamedWindow("output",CV_WINDOW_AUTOSIZE);
-    createTrackbar("canny1","output",&s1,255,trackBar);
-    createTrackbar("canny2", "output", &s2, 255, trackBar);
-    createTrackbar("gauss","output",&s3,9,trackBar);
+
+    //closure operation
+    Mat morphImage;
+    Mat kernel = getStructuringElement(MORPH_RECT, Size(3, 3), Point(-1, -1));
+    morphologyEx(binary, morphImage, MORPH_CLOSE, kernel, Point(-1, -1), 2);
+    imshow("morphology", morphImage);
+
+    // find the max contour
+    vector<vector<Point>> contours;
+    vector<Vec4i> hireachy;
+
+    vector<Point> Maxcontour;
+    int Maxindex=-1;
+    double Maxarea=0;
+    
+    findContours(morphImage, contours, hireachy, CV_RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point());
+    Mat connImage = Mat::zeros(skull_pic.size(), CV_8UC3);
+    for (size_t t = 0; t < contours.size(); t++){
+        Rect rect = boundingRect(contours[t]);
+       
+        double area = contourArea(contours[t]);
+        double len = arcLength(contours[t], true);
+        if(area>Maxarea)
+        {
+            Maxcontour=contours[t];
+            Maxarea=area;
+            Maxindex=t;
+        }
+    }
+    drawContours(connImage, contours, Maxindex, Scalar(0, 0, 255), 1, 8, hireachy);
+    imshow("output", connImage);
+
+    if(Maxindex!=-1)
+    {
+        for(auto point:Maxcontour)
+            vec_sutura.push_back(Point(point.x,point.y));  
+    }
+    
+    //createTrackbar("canny1","output",&s1,255,trackBar);
+    //createTrackbar("canny2", "output", &s2, 255, trackBar);
+    //createTrackbar("gauss","output",&s3,9,trackBar);
     //GaussianBlur(src,src,Size(3,3),0);
     waitKey(0);
-
-    #if 0
-    vector<vector<Point>> contours;
-    vector<Vec4i> hierarchy;
-    Mat imageContours=Mat::zeros(Size(640,480),CV_8UC1);
-    Mat Contours=Mat::zeros(Size(640,480),CV_8UC1);
-    findContours(dst,contours,hierarchy,CV_RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point(0, 0));
-    
-    for (int i = 0; i < contours.size(); i++)
-    {
-        //compute contour area
-        double area = contourArea(contours[i]);
-        
-        //remove contours whose area less than 1000
-        if (area < 300.0 || area>2000.0)
-            continue;
-        else
-        {
-            for(int j=0;j<contours[i].size();j++)
-            {
-                Point p=Point(contours[i][j].x,contours[i][j].y);
-                Contours.at<uchar>(p)=255;
-                //vec_sutura.push_back(Point(contours[i][j].x,contours[i][j].y));
-                cout<<"contour "<<i<<" area: "<<area<<endl;
-            }     
-        }
-        //char ch[256];  
-        //sprintf(ch,"%d",i);  
-        //string str=ch;  
-        //cout<<"向量hierarchy的第" <<str<<" 个元素内容为："<<endl<<hierarchy[i]<<endl<<endl;  
-        //绘制轮廓  
-        //drawContours(imageContours,contours,i,Scalar(255),1,8,hierarchy);  
-    }  
-    //imshow("gray",gray);
-    //imshow("res",res);
-    imshow("Contours Image",imageContours); //轮廓  
-    imshow("Point of Contours",Contours);   //向量contours内保存的所有轮廓点集  
-    #endif 
 }
 
 void FEATURE_EXTRACT::printmatrix()
