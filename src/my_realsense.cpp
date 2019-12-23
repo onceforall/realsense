@@ -109,7 +109,7 @@ float MYREALSENSE::get_depth_scale(rs2::device dev)
 }
 
 
-
+#if 0
 void MYREALSENSE::align_Depth2Color()
 {
     cloud_realsense=PointCloudT::Ptr (new PointCloudT);
@@ -166,15 +166,17 @@ void MYREALSENSE::align_Depth2Color()
     view_pointcloud();
     return;
 }
+#endif
 
 
-Mat MYREALSENSE::align_Depth2Color(string mask_path)
+Mat MYREALSENSE::align_Depth2Color()
 {
-    Mat mask_pic=imread(mask_path,0);
-    if(mask_pic.empty())
-    {
-        printf("can't load image \n");
-    }
+    // Mat mask_pic=imread(mask_path,0);
+    // if(mask_pic.empty())
+    // {
+    //     printf("can't load image \n");
+    // }
+    imshow("mask",mask_pic);
     int rowNumber = mask_pic.rows;    //行数
 	int colNumber = mask_pic.cols*mask_pic.channels();   //列数*通道数=每一行元素的个数
 
@@ -229,7 +231,8 @@ Mat MYREALSENSE::align_Depth2Color(string mask_path)
             
             uchar* data = mask_pic.ptr<uchar>(y);
             int intensity=data[x];
-            if(intensity==100)
+            //if(intensity==100)
+            if(intensity)
                 feature_extract.cloud_sutura->points.push_back(PointT(Pdc3[0]*1000,Pdc3[1]*1000,Pdc3[2]*1000));
 
             for(int k=0;k<3;k++)
@@ -250,6 +253,7 @@ Mat MYREALSENSE::align_Depth2Color(string mask_path)
     pcl::io::savePLYFileASCII("/home/yons/projects/realsense/res/part.ply", *feature_extract.cloud_sutura);
     view_pointcloud(cloud_realsense);
     //extract_target();
+    waitKey(0);
     return result;
 }
 

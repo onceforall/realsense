@@ -106,21 +106,21 @@ void trackBar(int,void*)
     imshow("Point of Contours",Contours);   //向量contours内保存的所有轮廓点集  
 }
 
-void FEATURE_EXTRACT::get_mask(Mat mask_pic)
+void FEATURE_EXTRACT::get_mask(Mat* mask_pic)
 {
-    int dx[]={-1,0,1},dy[]={-1,0,1};
-    vector<vector<Point2i>> Ctour;
+    int dx[]={-1,0,1},dy[]={-1,0,1};  //find outmost border,if there exists a 0-pixel in 8-neighbors,it's border point 
+    //vector<vector<Point2i>> Ctour;
     Mat binary;
-    if(mask_pic.empty())
+    if(mask_pic->empty())
     {
         printf("can not load image \n");
         return;
     }
-    if(mask_pic.channels()==3)
-        cvtColor(mask_pic,gray,COLOR_BGR2GRAY);
+    if(mask_pic->channels()==3)
+        cvtColor(*mask_pic,gray,COLOR_BGR2GRAY);
     else
     {
-        gray=mask_pic.clone();
+        gray=mask_pic->clone();
     }
     
     threshold(gray,binary,0,255,THRESH_BINARY+THRESH_OTSU);
@@ -131,13 +131,13 @@ void FEATURE_EXTRACT::get_mask(Mat mask_pic)
     Mat kernel = getStructuringElement(MORPH_RECT, Size(3, 3), Point(-1, -1));
     morphologyEx(binary, morphImage, MORPH_CLOSE, kernel, Point(-1, -1), 2);
     
-    Mat pic_contour=Mat::zeros(Size(mask_pic.cols,mask_pic.rows),CV_8UC1);
-    int rowNumber = mask_pic.rows;    //行数
-	int colNumber = mask_pic.cols*mask_pic.channels();   //列数*通道数=每一行元素的个数
+    Mat pic_contour=Mat::zeros(Size(morphImage.cols,morphImage.rows),CV_8UC1);
+    int rowNumber = mask_pic->rows;    //行数
+	int colNumber = mask_pic->cols*mask_pic->channels();   //列数*通道数=每一行元素的个数
  
 	for(int row = 0; row < rowNumber; row++)  //行循环，可根据需要换成rowNumber
 	{
-        vector<Point> pointse;
+        //vector<Point> pointse;
 		//uchar* data = morphImage.ptr<uchar>(row);  //获取第i行的首地址
 		for(int col = 0; col < colNumber; col++)  //列循环，同理
 		{
@@ -156,7 +156,7 @@ void FEATURE_EXTRACT::get_mask(Mat mask_pic)
                             //if(curdata[y]==0)
                             if(morphImage.at<uchar>(x,y)==0)
                             {
-                                pointse.push_back(Point(row,col));
+                                vec_sutura.push_back(Point(row,col));
                                 break;
                             } 
                         }
@@ -164,18 +164,17 @@ void FEATURE_EXTRACT::get_mask(Mat mask_pic)
                 }         
             } 
 		}
-        if(pointse.size()>0)
-            Ctour.push_back(pointse);
+        //if(pointse.size()>0)
+            //Ctour.push_back(pointse);
 	}
     cout<<"index done"<<endl;
-    for(auto end:Ctour)
+    for(auto end:vec_sutura)
     {
-        for(int i=0;i<end.size();i++)
-            pic_contour.at<uchar>(end[i].x,end[i].y)=255;
+        pic_contour.at<uchar>(end.x,end.y)=255;
     }
-    
-    imshow("contours",pic_contour);
-    waitKey(0);
+    *mask_pic=pic_contour.clone();
+    //imshow("contours",pic_contour);
+    //waitKey(0);
 }
 
 void FEATURE_EXTRACT::sutura_detect(Mat skull_pic)

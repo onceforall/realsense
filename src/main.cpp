@@ -33,16 +33,16 @@ int main()
     int num=0;
     MYREALSENSE firstone;
     string test_path="/home/yons/projects/pycharms/Mask_RCNN/Out_Mask/color.png";
-    Mat test=imread(test_path,0);
-    firstone.feature_extract.get_mask(test);
+    firstone.mask_pic=imread(test_path,0);
+    Mat* mask=&firstone.mask_pic;
+    firstone.feature_extract.get_mask(mask);
     //firstone.feature_extract.sutura_detect(test);
-    return 0;
+    //return 0;
     //firstone.get_LR();
     rs2::colorizer c; 
     namedWindow(firstone.depth_win,WINDOW_AUTOSIZE);
     namedWindow(firstone.color_win,WINDOW_AUTOSIZE);
     
-    string mask_path="/home/yons/projects/pycharms/Mask_RCNN/Out_Mask/color.png";
     //std::stringstream png_file;
     //std::stringstream csv_file;
     //png_file << "/home/yons/projects/realsense/res/depth" << ".png";
@@ -55,7 +55,7 @@ int main()
     //pcl::io::loadPLYFile(partcloudfile,*part);
     //firstone.feature_extract.cloud_sutura=part;
     //firstone.view_pointcloud(cloud);
-    firstone.result=firstone.align_Depth2Color(mask_path);
+    firstone.result=firstone.align_Depth2Color();
     return 0;
     std::ofstream outfile("/home/yons/projects/realsense/res/depth.txt");
     while (cvGetWindowHandle(firstone.depth_win)&&cvGetWindowHandle(firstone.color_win)) // Application still alive?

@@ -50,6 +50,7 @@ public:
     Mat dMat_color;
     Mat result;
     Mat depth_color;
+    Mat mask_pic;
     PointCloudT::Ptr targetcloud;
 
     const char* depth_win="depth_Image";
@@ -68,12 +69,12 @@ public:
     MYREALSENSE(/* args */);
     ~MYREALSENSE();
     float get_depth_scale(rs2::device dev);
-    Mat align_Depth2Color(string mask_path);
+    Mat align_Depth2Color();
     int get_pointcloud();
     void view_pointcloud(PointCloudT::Ptr cloud);  
     int get_LR();
     int extract_target();
-    void align_Depth2Color();
+    //void align_Depth2Color();
     void view_pointcloud();
     void readMatrixfromTXT(string fileName, const int numRow,const int numColumn,  Mat* matrix);
 private:
