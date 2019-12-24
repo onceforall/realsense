@@ -173,6 +173,7 @@ void FEATURE_EXTRACT::get_mask(Mat* mask_pic)
         pic_contour.at<uchar>(end.x,end.y)=255;
     }
     *mask_pic=pic_contour.clone();
+    imwrite("/home/yons/projects/realsense/res/mask.png",*mask_pic);
     //imshow("contours",pic_contour);
     //waitKey(0);
 }

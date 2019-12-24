@@ -171,15 +171,14 @@ void MYREALSENSE::align_Depth2Color()
 
 Mat MYREALSENSE::align_Depth2Color()
 {
-    // Mat mask_pic=imread(mask_path,0);
+    //mask_pic=imread("/home/yons/projects/pycharms/Mask_RCNN/Out_Mask/color.png",0);
     // if(mask_pic.empty())
     // {
     //     printf("can't load image \n");
     // }
-    imshow("mask",mask_pic);
+    
     int rowNumber = mask_pic.rows;    //行数
 	int colNumber = mask_pic.cols*mask_pic.channels();   //列数*通道数=每一行元素的个数
-
     cloud_realsense=PointCloudT::Ptr (new PointCloudT);
     feature_extract.cloud_sutura=PointCloudT::Ptr (new PointCloudT);
     auto depth_stream=profile.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>();
@@ -229,12 +228,14 @@ Mat MYREALSENSE::align_Depth2Color()
             y=y<0?0:y;
             y=y>Mat_depth->rows-1?Mat_depth->rows-1:y;
             
-            uchar* data = mask_pic.ptr<uchar>(y);
-            int intensity=data[x];
+            //uchar* data = mask_pic.ptr<uchar>(y);
+            int intensity=mask_pic.at<uchar>(y,x);
             //if(intensity==100)
             if(intensity)
+            {
                 feature_extract.cloud_sutura->points.push_back(PointT(Pdc3[0]*1000,Pdc3[1]*1000,Pdc3[2]*1000));
-
+            }
+                
             for(int k=0;k<3;k++)
             {
                 if(depth_in_meter<1)
@@ -253,6 +254,7 @@ Mat MYREALSENSE::align_Depth2Color()
     pcl::io::savePLYFileASCII("/home/yons/projects/realsense/res/part.ply", *feature_extract.cloud_sutura);
     view_pointcloud(cloud_realsense);
     //extract_target();
+    imshow("mask",mask_pic);
     waitKey(0);
     return result;
 }

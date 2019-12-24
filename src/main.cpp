@@ -32,6 +32,8 @@ int main()
 {
     int num=0;
     MYREALSENSE firstone;
+    
+    //#if 0
     string test_path="/home/yons/projects/pycharms/Mask_RCNN/Out_Mask/color.png";
     firstone.mask_pic=imread(test_path,0);
     Mat* mask=&firstone.mask_pic;
@@ -39,25 +41,32 @@ int main()
     //firstone.feature_extract.sutura_detect(test);
     //return 0;
     //firstone.get_LR();
+    firstone.result=firstone.align_Depth2Color();
+    return 0;
+
+    //#endif
     rs2::colorizer c; 
     namedWindow(firstone.depth_win,WINDOW_AUTOSIZE);
     namedWindow(firstone.color_win,WINDOW_AUTOSIZE);
-    
+   
     //std::stringstream png_file;
     //std::stringstream csv_file;
     //png_file << "/home/yons/projects/realsense/res/depth" << ".png";
     //csv_file << "/home/yons/projects/realsense/res/depth"<< "-metadata.csv";
-    //PointCloudT::Ptr cloud=PointCloudT::Ptr(new PointCloudT);
-    //PointCloudT::Ptr part=PointCloudT::Ptr(new PointCloudT);
-    //string inputcloudfile="/home/yons/projects/realsense/res/pointcloud.ply";
-    //string partcloudfile="/home/yons/projects/realsense/res/part.ply";
-    //pcl::io::loadPLYFile(inputcloudfile, *cloud);
-    //pcl::io::loadPLYFile(partcloudfile,*part);
-    //firstone.feature_extract.cloud_sutura=part;
-    //firstone.view_pointcloud(cloud);
-    firstone.result=firstone.align_Depth2Color();
+
+    #if 0
+    PointCloudT::Ptr cloud=PointCloudT::Ptr(new PointCloudT);
+    PointCloudT::Ptr part=PointCloudT::Ptr(new PointCloudT);
+    string inputcloudfile="/home/yons/projects/realsense/res/pointcloud.ply";
+    string partcloudfile="/home/yons/projects/realsense/res/part.ply";
+    pcl::io::loadPLYFile(inputcloudfile, *cloud);
+    pcl::io::loadPLYFile(partcloudfile,*part);
+    firstone.feature_extract.cloud_sutura=part;
+    firstone.view_pointcloud(cloud);
     return 0;
-    std::ofstream outfile("/home/yons/projects/realsense/res/depth.txt");
+    #endif 
+
+    std::ofstream outfile("/home/yons/projects/realsense/res/depth.txt",ios::out | ios::binary);
     while (cvGetWindowHandle(firstone.depth_win)&&cvGetWindowHandle(firstone.color_win)) // Application still alive?
     {
         
@@ -119,8 +128,6 @@ int main()
             outfile<<endl;
         }
         outfile.close();
-        
-        
         
         //imwrite("/home/yons/projects/realsense/res/depth.png",firstone.dMat_depth);
         imwrite("/home/yons/projects/realsense/res/color.png",firstone.dMat_color);
