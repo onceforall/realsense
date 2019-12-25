@@ -424,3 +424,48 @@ catch(const std::exception & e)
     std::cerr<<e.what()<<std::endl;
     return EXIT_FAILURE;
 }
+
+int MYREALSENSE::get_depth()
+try
+{
+    rs2::colorizer c; 
+    while (true)
+    {
+        rs2::frameset frameset=pipe.wait_for_frames();
+        rs2::depth_frame depth=frameset.get_depth_frame();
+        rs2::frame depth_frame_4_show = frameset.get_depth_frame().apply_filter(c);
+        rs2::video_frame ir_frame_left = frameset.get_infrared_frame(1);
+		rs2::video_frame ir_frame_right = frameset.get_infrared_frame(2);
+
+		dMat_left = cv::Mat(cv::Size(pic_width, pic_height), CV_8UC1, (void*)ir_frame_left.get_data());
+		dMat_right = cv::Mat(cv::Size(pic_width, pic_height), CV_8UC1, (void*)ir_frame_right.get_data());
+        dMat_depth=cv::Mat(cv::Size(pic_width, pic_height),CV_8UC1,(void*)depth.get_data());
+        depth_color=Mat(Size(depth_w,depth_h),
+                                CV_8UC3,(void*)depth_frame_4_show.get_data(),Mat::AUTO_STEP);
+		cv::imshow("img_l", dMat_left);
+		cv::imshow("img_r", dMat_right);
+        cv::imshow("depth", depth_color);
+        //cv::imwrite("/home/yons/projects/realsense/res/left.jpg",dMat_left);
+        //cv::imwrite("/home/yons/projects/realsense/res/right.jpg",dMat_right);
+		char c = cv::waitKey(30);
+
+        float width=depth.get_width();
+        float height=depth.get_height();
+        
+        float dist_to_center=depth.get_distance(width/2,height/2);
+
+        std::cout<<"The camera is facing an object "<<dist_to_center<<" meters away \r";
+    
+    }
+    return EXIT_SUCCESS;
+}
+catch(const rs2::error & e)
+{
+    std::cerr << "Realsense error calling " <<e.get_failed_function()<<"("<<e.get_failed_args()<<"):\n   "<<e.what()<< '\n';
+    return EXIT_FAILURE;
+}
+catch(const std::exception & e)
+{
+    std::cerr<<e.what()<<std::endl;
+    return EXIT_FAILURE;
+}

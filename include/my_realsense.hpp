@@ -77,6 +77,7 @@ public:
     //void align_Depth2Color();
     void view_pointcloud();
     void readMatrixfromTXT(string fileName, const int numRow,const int numColumn,  Mat* matrix);
+    int get_depth();
 private:
     PointCloudT::Ptr cloud_realsense;
     PointCloudT::Ptr cloud_filtered;

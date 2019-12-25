@@ -1,6 +1,4 @@
 #include "feature_extract.hpp"
-#include "get_depth.hpp"
-#include "pointcloud.hpp"
 #include "my_realsense.hpp"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
@@ -33,15 +31,17 @@ int main()
     int num=0;
     MYREALSENSE firstone;
     
+    //firstone.get_depth();
+   
     //#if 0
-    string test_path="/home/yons/projects/pycharms/Mask_RCNN/Out_Mask/color.png";
+    string test_path="/home/yons/projects/realsense/data/human.jpg";
     firstone.mask_pic=imread(test_path,0);
     Mat* mask=&firstone.mask_pic;
     firstone.feature_extract.get_mask(mask);
     //firstone.feature_extract.sutura_detect(test);
     //return 0;
     //firstone.get_LR();
-    firstone.result=firstone.align_Depth2Color();
+    //firstone.result=firstone.align_Depth2Color();
     return 0;
 
     //#endif

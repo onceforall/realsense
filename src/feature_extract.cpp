@@ -109,6 +109,7 @@ void trackBar(int,void*)
 void FEATURE_EXTRACT::get_mask(Mat* mask_pic)
 {
     int dx[]={-1,0,1},dy[]={-1,0,1};  //find outmost border,if there exists a 0-pixel in 8-neighbors,it's border point 
+    int ddx[]={-1,0,0,1},ddy[]={0,-1,1,0};
     //vector<vector<Point2i>> Ctour;
     Mat binary;
     if(mask_pic->empty())
@@ -141,8 +142,16 @@ void FEATURE_EXTRACT::get_mask(Mat* mask_pic)
 		//uchar* data = morphImage.ptr<uchar>(row);  //获取第i行的首地址
 		for(int col = 0; col < colNumber; col++)  //列循环，同理
 		{
+            if(morphImage.at<uchar>(row,col)==0 && col+1<colNumber && morphImage.at<uchar>(row,col+1))
+                vec_sutura.push_back(Point(row,col+1));
+            else if(morphImage.at<uchar>(row,col) && col+1<colNumber && morphImage.at<uchar>(row,col+1)==0)
+            {
+                vec_sutura.push_back(Point(row,col));
+                //break;
+            }  
 			//int intensity = data[col];
-            if(morphImage.at<uchar>(row,col))
+            #if 0
+            else if(morphImage.at<uchar>(row,col))
             {
                 for(int i=0;i<3;i++)
                 {
@@ -163,6 +172,19 @@ void FEATURE_EXTRACT::get_mask(Mat* mask_pic)
                     }
                 }         
             } 
+            #endif
+            else if(morphImage.at<uchar>(row,col))
+            {
+                for(int i=0;i<4;i++)
+                {
+                    int x=row+ddx[i],y=col+ddy[i];
+                    if(x>=0 && x<rowNumber && y>=0 && y<colNumber && morphImage.at<uchar>(x,y)==0)
+                    {
+                        vec_sutura.push_back(Point(row,col));
+                        break;
+                    }
+                }
+            }
 		}
         //if(pointse.size()>0)
             //Ctour.push_back(pointse);

@@ -57,7 +57,7 @@ find_package(glfw3 REQUIRED)
 
 include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/third-party)
 
-add_executable(realsense src/feature_extract.cpp src/get_depth.cpp src/pointcloud.cpp src/example.cpp src/my_realsense.cpp src/main.cpp )
+add_executable(realsense src/feature_extract.cpp src/example.cpp src/my_realsense.cpp src/main.cpp )
 
 target_link_libraries(realsense ${OpenCV_LIBS}  ${PCL_LIBRARIES}  ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES} ${PCL_KDTREE_LIBRARIES} ${PCL_FEATURES_LIBRARIES} ${PCL_VISUALIZATION_LIBRARIES} ${PCL_RECOGNITION_LIBRARIES}  ${OPENGL_LIBRARIES} ${GLUT_LIBRARY} glfw)
 target_link_libraries(realsense realsense2)
