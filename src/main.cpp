@@ -34,7 +34,7 @@ int main()
     //firstone.get_depth();
    
     //#if 0
-    string test_path="/home/yons/projects/realsense/data/human.jpg";
+    string test_path="/home/yons/projects/pycharms/Mask_RCNN/Out_Mask/color.png";
     firstone.mask_pic=imread(test_path,0);
     Mat* mask=&firstone.mask_pic;
     firstone.feature_extract.get_mask(mask);

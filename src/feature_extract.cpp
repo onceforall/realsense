@@ -110,7 +110,6 @@ void FEATURE_EXTRACT::get_mask(Mat* mask_pic)
 {
     int dx[]={-1,0,1},dy[]={-1,0,1};  //find outmost border,if there exists a 0-pixel in 8-neighbors,it's border point 
     int ddx[]={-1,0,0,1},ddy[]={0,-1,1,0};
-    //vector<vector<Point2i>> Ctour;
     Mat binary;
     if(mask_pic->empty())
     {
@@ -138,7 +137,6 @@ void FEATURE_EXTRACT::get_mask(Mat* mask_pic)
  
 	for(int row = 0; row < rowNumber; row++)  //行循环，可根据需要换成rowNumber
 	{
-        //vector<Point> pointse;
 		//uchar* data = morphImage.ptr<uchar>(row);  //获取第i行的首地址
 		for(int col = 0; col < colNumber; col++)  //列循环，同理
 		{
@@ -186,8 +184,6 @@ void FEATURE_EXTRACT::get_mask(Mat* mask_pic)
                 }
             }
 		}
-        //if(pointse.size()>0)
-            //Ctour.push_back(pointse);
 	}
     cout<<"index done"<<endl;
     for(auto end:vec_sutura)
